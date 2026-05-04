@@ -46,25 +46,29 @@ export default function initializeSocket(server: HttpServer) {
         userSocketMap.set(userId, [...currentSockets, socket.id]);
         const connectedUsers = Array.from(userSocketMap.keys());
         socket.emit("onlineUsers", connectedUsers);
-        io.emit("onlineUsers", connectedUsers);
+        socket.broadcast.emit("onlineUsers", connectedUsers);
         console.log(`Socket.IO connected. User ${userId} is online`);
 
         socket.on("joinRoom", async (roomId: string) => {
-            const userId = socket.data.userId;
-            if (!userId) {
-                socket.emit("roomJoinError", roomId, "Unauthorized: missing socket user id");
-                return;
+            try {
+                const userId = socket.data.userId;
+                if (!userId) {
+                    socket.emit("roomJoinError", roomId, "Unauthorized: missing socket user id");
+                    return;
+                }
+
+                const isMember = await prisma.room.findFirst({ where: { id: roomId, members: { some: { userId } } }, select: { id: true } });
+
+                if (!isMember) {
+                    socket.emit("roomJoinError", roomId, "Unauthorized: not a member of the room");
+                    return;
+                }
+
+                socket.join(roomId);
+                console.log(`User ${socket.id} joined room ${roomId}`);
+            } catch {
+                socket.emit("roomJoinError", roomId, "Unable to join room");
             }
-
-            const isMember = await prisma.room.findFirst({ where: { id: roomId, members: { some: { userId } } }, select: { id: true } });
-
-            if (!isMember) {
-                socket.emit("roomJoinError", roomId, "Unauthorized: not a member of the room");
-                return;
-            }
-
-            socket.join(roomId);
-            console.log(`User ${socket.id} joined room ${roomId}`);
         });
 
         socket.on("leaveRoom", async (roomId: string) => {
