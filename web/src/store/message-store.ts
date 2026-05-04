@@ -77,7 +77,7 @@ const useMessage = create<MessageStore>((set) => ({
 
             set((state) => ({ messages: [...state.messages.filter((msg) => msg.id !== deletedMessage.id)] }));
         } catch (err) {
-            console.error("Error deleing message", err);
+            console.error("Error deleting message", err);
         }
     },
 }));

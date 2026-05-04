@@ -9,6 +9,7 @@ import { RoomResponse, RoomsResponse } from "@/types/response";
 
 interface RoomStore {
     rooms: Room[];
+    currentRoomId: string | null;
 
     createRoom: (token: string, payload: RoomPayload) => Promise<void>;
 
@@ -18,6 +19,7 @@ interface RoomStore {
 
 const useRoom = create<RoomStore>((set) => ({
     rooms: [],
+    currentRoomId: null,
 
     getRooms: async (token) => {
         try {
@@ -54,21 +56,19 @@ const useRoom = create<RoomStore>((set) => ({
             if (!data.success) throw new Error(data.error);
 
             const socket = useSocket.getState().socket;
-            const currentMessages = useMessage.getState().messages;
 
             if (socket) {
-                if (currentMessages.length > 0) {
-                    const previousRoomId = currentMessages[0].roomId;
-                    if (previousRoomId !== roomId) {
-                        socket.emit("leaveRoom", previousRoomId);
-                    }
+                const previousRoomId = useRoom.getState().currentRoomId;
+                if (previousRoomId && previousRoomId !== roomId) {
+                    socket.emit("leaveRoom", previousRoomId);
                 }
                 socket.emit("joinRoom", roomId);
             }
 
+            set({ currentRoomId: roomId });
             useMessage.getState().setMessages(data.data.messages || []);
         } catch (err) {
-            console.error("Error sending message", err);
+            console.error("Error fetching conversation", err);
         }
     },
 }));

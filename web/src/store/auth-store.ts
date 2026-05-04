@@ -58,6 +58,8 @@ const useUser = create<AuthStore>((set, get) => ({
             return;
         }
 
+        set({ loading: true });
+
         try {
             const res = await api.get<UserSearchResponse>("/user/search", {
                 headers: { Authorization: `Bearer ${token}` },
@@ -71,10 +73,10 @@ const useUser = create<AuthStore>((set, get) => ({
 
             if (!data.success) throw new Error(res.data.error);
 
-            set({ searchResult: data.data });
+            set({ searchResult: data.data, loading: false });
         } catch (err) {
-            console.error("Error white searching user", err);
-            set({ searchResult: [] });
+            console.error("Error while searching user", err);
+            set({ searchResult: [], loading: false });
         }
     },
 
@@ -95,7 +97,7 @@ const useUser = create<AuthStore>((set, get) => ({
 
             set({ user: data.data });
         } catch (err) {
-            console.error("Error white updating user", err);
+            console.error("Error while updating user", err);
         }
     },
 

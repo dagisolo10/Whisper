@@ -24,7 +24,7 @@ const useSocket = create<SocketStore>((set, get) => ({
         if (!token) return;
 
         let socket: WebSocket;
-        const baseUrl = "http://localhost:3000";
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
         const existing = get().socket;
         if (existing) {
@@ -68,7 +68,8 @@ const useSocket = create<SocketStore>((set, get) => ({
             useMessage.getState().addMessage(message);
         });
 
-        socket.off("messageRead", (roomId) => {
+        socket.off("messageRead");
+        socket.on("messageRead", (roomId) => {
             const user = useAuthStore.getState().user;
             const updated = useMessage
                 .getState()
