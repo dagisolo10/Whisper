@@ -1,0 +1,105 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+@import "nativewind/theme";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+    --dead-zone: #191921;
+
+    --primary: #4f7cff;
+    --accent: #ea7a53;
+    --success: #16a34a;
+    --destructive: #e35454;
+    --drawer: #5ea8dd;
+
+    --card-foreground: #081126;
+    --muted-foreground: #334155;
+    --accent-foreground: #ffffff;
+    --primary-foreground: #ffffff;
+    --success-foreground: #ffffff;
+    --destructive-foreground: #ffffff;
+
+    --background: #f8fafc;
+    --foreground: #081126;
+
+    --card: hsl(48, 68%, 89%);
+    --muted: #e2e8f0;
+    --border: #2e2e3d;
+}
+
+.dark {
+    --primary: #5b7cff;
+    --accent: #ff6569;
+    --success: #00bc7d;
+    --destructive: #e35454;
+    --drawer: #568bb5;
+
+    --card-foreground: #ffffff;
+    --muted-foreground: #73738c;
+    --accent-foreground: #ffffff;
+    --primary-foreground: #ffffff;
+    --success-foreground: #ffffff;
+    --destructive-foreground: #ffffff;
+
+    --background: #191921;
+    --foreground: #ffffff;
+
+    --card: #2d2d43;
+    --muted: #23232f;
+    --border: #2e2e3d;
+}
+
+@theme inline {
+    --color-background: var(--background);
+    --color-drawer: var(--drawer);
+    --color-foreground: var(--foreground);
+
+    --color-dead-zone: var(--dead-zone);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-gray: var(--gray);
+    --color-border: var(--border);
+
+    --font-sans: sans-regular;
+    --font-light: sans-light;
+    --font-medium: sans-medium;
+    --font-semibold: sans-semibold;
+    --font-bold: sans-bold;
+    --font-extrabold: sans-extrabold;
+
+    --text-h1: 2em;
+}
+
+@layer components {
+    .h1 {
+        @apply text-5xl leading-tight font-bold;
+    }
+    .h2 {
+        @apply text-4xl leading-tight font-bold;
+    }
+    .h3 {
+        @apply text-3xl leading-tight font-bold;
+    }
+    .row {
+        @apply flex-row items-center;
+    }
+}
