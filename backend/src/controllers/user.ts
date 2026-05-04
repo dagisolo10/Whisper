@@ -69,13 +69,13 @@ export async function updateUser(req: Request, res: Response) {
         }
 
         const updateData: Prisma.UserUpdateInput = {};
-        updateData.lastOnlineAt = new Date();
         if (bio !== undefined) updateData.bio = bio;
         if (name !== undefined) updateData.name = name;
         if (username !== undefined) updateData.username = username;
         if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
 
         if (Object.keys(updateData).length === 0) throw new HttpError(400, "No fields provided for update");
+        updateData.lastOnlineAt = new Date();
 
         try {
             const user = await prisma.user.update({ where: { id }, data: updateData });

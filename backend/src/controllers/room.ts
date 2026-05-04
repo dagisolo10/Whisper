@@ -7,7 +7,8 @@ import type { Request, Response } from "express";
 export async function createRoom(req: Request, res: Response) {
     const result = await wrapper(async () => {
         const userId = req.userId;
-        const partnerId = req.body.partnerId as string;
+        const rawPartnerId = req.body.partnerId;
+        const partnerId = typeof rawPartnerId === "string" ? rawPartnerId.trim() : "";
 
         if (!userId) throw new HttpError(401, "Unauthorized. Login First");
         if (!partnerId) throw new HttpError(400, "partnerId is required");
@@ -15,16 +16,6 @@ export async function createRoom(req: Request, res: Response) {
 
         const memberIds = [userId, partnerId];
         const pairKey = memberIds.sort().join("_");
-
-        const existingRoom = await prisma.room.findFirst({
-            where: { pairKey },
-            include: {
-                members: { include: { user: true } },
-                messages: { include: { user: true }, orderBy: { createdAt: "asc" } },
-            },
-        });
-
-        if (existingRoom && existingRoom.members.length === 2) return existingRoom;
 
         try {
             const room = await prisma.room.create({
@@ -34,7 +25,6 @@ export async function createRoom(req: Request, res: Response) {
                 },
                 include: {
                     members: { include: { user: true } },
-                    messages: { include: { user: true }, orderBy: { createdAt: "asc" } },
                 },
             });
 
@@ -43,7 +33,7 @@ export async function createRoom(req: Request, res: Response) {
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
                 return await prisma.room.findUnique({
                     where: { pairKey },
-                    include: { members: { include: { user: true } }, messages: { include: { user: true } } },
+                    include: { members: { include: { user: true } } },
                 });
             }
 
