@@ -19,10 +19,10 @@ export const createUserPayloadSchema = z.object({
         .max(160, "Bio must be 160 characters or fewer")
         .optional()
         .transform((bio: string | undefined) => (bio && bio.length > 0 ? bio : undefined)),
-    profile: z
+    avatarUrl: z
         .string()
         .trim()
-        .transform((profile: string | undefined) => (profile && profile.length > 0 ? profile : null))
+        .transform((avatarUrl: string | undefined) => (avatarUrl && avatarUrl.length > 0 ? avatarUrl : null))
         .optional(),
 });
 
@@ -35,10 +35,10 @@ export const updateUserPayloadSchema = z.object({
         .max(160, "Bio must be 160 characters or fewer")
         .optional()
         .transform((bio: string | undefined) => (bio && bio.length > 0 ? bio : null)),
-    profile: z
+    avatarUrl: z
         .string()
         .trim()
-        .transform((profile: string | undefined) => (profile && profile.length > 0 ? profile : null))
+        .transform((avatarUrl: string | undefined) => (avatarUrl && avatarUrl.length > 0 ? avatarUrl : null))
         .optional(),
 });
 
