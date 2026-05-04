@@ -25,18 +25,29 @@ export async function createRoom(req: Request, res: Response) {
 
         if (existingRoom && existingRoom.members.length === 2) return existingRoom;
 
-        const room = await prisma.room.create({
-            data: {
-                pairKey,
-                members: { create: memberIds.map((id) => ({ userId: id })) },
-            },
-            include: {
-                members: { include: { user: true } },
-                messages: { include: { user: true }, orderBy: { createdAt: "asc" } },
-            },
-        });
+        try {
+            const room = await prisma.room.create({
+                data: {
+                    pairKey,
+                    members: { create: memberIds.map((id) => ({ userId: id })) },
+                },
+                include: {
+                    members: { include: { user: true } },
+                    messages: { include: { user: true }, orderBy: { createdAt: "asc" } },
+                },
+            });
 
-        return room;
+            return room;
+        } catch (err: any) {
+            if (err.code === "P2002") {
+                return await prisma.room.findUnique({
+                    where: { pairKey },
+                    include: { members: { include: { user: true } }, messages: { include: { user: true } } },
+                });
+            }
+
+            throw err;
+        }
     }, "createRoom");
 
     return result.success ? res.status(201).json(result) : res.status(result.status).json(result);
@@ -69,7 +80,7 @@ export async function getRooms(req: Request, res: Response) {
             orderBy: [{ lastMessageAt: "desc" }, { updatedAt: "desc" }],
         });
 
-        return rooms;
+        return rooms.map((room) => ({ ...room, unreadCount: room._count.messages }));
     }, "getRooms");
 
     return result.success ? res.status(200).json(result) : res.status(result.status).json(result);
@@ -103,7 +114,11 @@ export async function getConversation(req: Request, res: Response) {
                 where: { id: roomId, members: { some: { userId } } },
                 include: {
                     members: { include: { user: true } },
-                    messages: { include: { user: true }, orderBy: { createdAt: "desc" }, take: 50 },
+                    messages: {
+                        take: 50,
+                        include: { user: true },
+                        orderBy: { createdAt: "desc" },
+                    },
                 },
             });
 
