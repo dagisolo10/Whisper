@@ -1,0 +1,62 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+model User {
+    id           String    @id
+    name         String
+    username     String    @unique
+    avatarUrl    String?
+    bio          String?
+    members      Member[]
+    messages     Message[]
+    lastOnlineAt DateTime  @default(now())
+    createdAt    DateTime  @default(now())
+}
+
+model Member {
+    id        String   @id @default(uuid())
+    userId    String
+    roomId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+
+    @@unique([userId, roomId])
+}
+
+model Room {
+    id            String    @id @default(uuid())
+    lastMessageId String?   @unique
+    lastMessage   Message?  @relation("LastMessage", fields: [lastMessageId], references: [id])
+    messages      Message[] @relation("RoomMessages")
+    members       Member[]
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+}
+
+model Message {
+    id          String      @id @default(uuid())
+    content     String
+    messageType MessageType
+    read        Boolean     @default(false)
+    senderId    String
+    roomId      String
+    lastInRoom  Room?       @relation("LastMessage")
+    room        Room        @relation("RoomMessages", fields: [roomId], references: [id], onDelete: Cascade)
+    user        User        @relation(fields: [senderId], references: [id], onDelete: Cascade)
+    createdAt   DateTime    @default(now())
+
+    @@index([roomId])
+    @@index([senderId])
+}
+
+enum MessageType {
+    Text
+    Image
+    Video
+}
