@@ -13,12 +13,14 @@ export async function sendMessage(req: Request, res: Response) {
 
         const senderId = req.userId;
         const roomId = req.body.roomId as string | undefined;
-        const partnerId = req.body.partnerId as string | undefined;
+        const rawPartnerId = req.body.partnerId;
+        const partnerId = typeof rawPartnerId === "string" ? rawPartnerId.trim() : "";
 
         if (!senderId) throw new HttpError(401, "Unauthorized. Login First");
         if (!content?.trim()) throw new HttpError(400, "Message is required");
         if (!messageType) throw new HttpError(400, "Message type is required");
-        if (typeof messageType !== typeof MessageType) throw new HttpError(400, "Invalid message type");
+        if (!Object.values(MessageType).includes(messageType)) throw new HttpError(400, "Invalid message type");
+        if (!partnerId && !roomId) throw new HttpError(400, "Either partnerId or roomId are required");
 
         const result = await prisma.$transaction(async (tx) => {
             let existingRoom: Room | null = null;
@@ -47,7 +49,6 @@ export async function sendMessage(req: Request, res: Response) {
                     },
                     include: {
                         members: true,
-                        messages: true,
                     },
                 });
 
@@ -62,7 +63,6 @@ export async function sendMessage(req: Request, res: Response) {
                             },
                             include: {
                                 members: true,
-                                messages: true,
                             },
                         });
                     } catch (error) {
@@ -73,7 +73,6 @@ export async function sendMessage(req: Request, res: Response) {
                                 },
                                 include: {
                                     members: true,
-                                    messages: true,
                                 },
                             });
                         } else {
