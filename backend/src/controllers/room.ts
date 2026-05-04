@@ -122,7 +122,7 @@ export async function getConversation(req: Request, res: Response) {
 
         const io: SocketServer<ClientToServerEvents, ServerToClientEvents> = req.app.get("io");
         if (roomData && io) {
-            io.to(roomId).emit("messageRead", roomId, userId, new Date());
+            io.to(roomId).emit("messageRead", roomId);
         }
 
         return roomData;
