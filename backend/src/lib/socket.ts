@@ -1,3 +1,5 @@
+import { HttpError } from "./http-error";
+
 import ENV from "@/util/env.js";
 import prisma from "@/lib/prisma.js";
 import { verifyToken } from "@clerk/backend";
@@ -20,21 +22,21 @@ export default function initializeSocket(server: HttpServer) {
             const token = socket.handshake.auth.token;
 
             if (typeof token !== "string" || !token.trim()) {
-                return next(new Error("Unauthorized: missing socket token"));
+                return next(new HttpError(401, "Unauthorized: missing socket token"));
             }
 
             const payload = await verifyToken(token, { secretKey: ENV.CLERK_SECRET_KEY });
             const userId = typeof payload?.sub === "string" ? payload.sub : undefined;
 
             if (!userId) {
-                return next(new Error("Unauthorized: invalid socket token"));
+                return next(new HttpError(401, "Unauthorized: invalid socket token"));
             }
 
             socket.data.userId = userId;
             next();
         } catch (error) {
             console.error("Socket auth error:", error);
-            next(new Error("Unauthorized: failed socket authentication"));
+            next(new HttpError(401, "Unauthorized: failed socket authentication"));
         }
     });
 
