@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 import wrapper from "@/util/action-wrapper";
 import { HttpError } from "@/lib/http-error";
 import type { Request, Response } from "express";
+import { Server as SocketServer } from "socket.io";
+import type { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-events";
 
 export async function createRoom(req: Request, res: Response) {
     const result = await wrapper(async () => {
@@ -117,6 +119,11 @@ export async function getConversation(req: Request, res: Response) {
 
             return room;
         });
+
+        const io: SocketServer<ClientToServerEvents, ServerToClientEvents> = req.app.get("io");
+        if (roomData && io) {
+            io.to(roomId).emit("messageRead", roomId, userId, new Date());
+        }
 
         return roomData;
     }, "getConversation");
