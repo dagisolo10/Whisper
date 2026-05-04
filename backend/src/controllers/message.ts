@@ -2,7 +2,9 @@ import prisma from "@/lib/prisma";
 import wrapper from "@/util/action-wrapper";
 import { HttpError } from "@/lib/http-error";
 import type { Request, Response } from "express";
+import { Server as SocketServer } from "socket.io";
 import { MessageType, Prisma, type Room } from "@prisma/client";
+import type { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-events.js";
 
 export async function sendMessage(req: Request, res: Response) {
     const result = await wrapper(async () => {
@@ -105,6 +107,12 @@ export async function sendMessage(req: Request, res: Response) {
                 },
             });
 
+            const io: SocketServer<ClientToServerEvents, ServerToClientEvents> = req.app.get("io");
+
+            if (io) {
+                io.to(existingRoom.id).emit("newMessage", newMessage, existingRoom.id);
+            }
+
             return { roomId: existingRoom.id, message: newMessage };
         });
 
@@ -155,6 +163,12 @@ export async function editMessage(req: Request, res: Response) {
             },
         });
 
+        const io: SocketServer<ClientToServerEvents, ServerToClientEvents> = req.app.get("io");
+
+        if (io) {
+            io.to(existingMessage.roomId).emit("messageEdited", updatedMessage);
+        }
+
         return updatedMessage;
     }, "editMessage");
 
@@ -189,6 +203,12 @@ export async function deleteMessage(req: Request, res: Response) {
         if (!isMember) throw new HttpError(400, "Not a member of this room");
 
         const deletedMessage = await prisma.message.delete({ where: { id } });
+
+        const io: SocketServer<ClientToServerEvents, ServerToClientEvents> = req.app.get("io");
+
+        if (io) {
+            io.to(existingMessage.roomId).emit("messageDeleted", existingMessage.id, existingMessage.roomId);
+        }
 
         return deletedMessage;
     }, "deleteMessage");
