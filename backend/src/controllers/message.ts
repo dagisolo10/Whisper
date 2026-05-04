@@ -1,7 +1,197 @@
+import prisma from "@/lib/prisma";
+import wrapper from "@/util/action-wrapper";
+import { HttpError } from "@/lib/http-error";
 import type { Request, Response } from "express";
+import { MessageType, Prisma, type Room } from "@prisma/client";
 
-export async function sendMessage(req: Request, res: Response) {}
+export async function sendMessage(req: Request, res: Response) {
+    const result = await wrapper(async () => {
+        const content = req.body.message as string;
+        const messageType = req.body.messageType as MessageType;
 
-export async function editMessage(req: Request, res: Response) {}
+        const senderId = req.userId;
+        const roomId = req.body.roomId as string | undefined;
+        const partnerId = req.body.partnerId as string | undefined;
 
-export async function deleteMessage(req: Request, res: Response) {}
+        if (!senderId) throw new HttpError(401, "Unauthorized. Login First");
+        if (!content?.trim()) throw new HttpError(400, "Message is required");
+        if (!messageType) throw new HttpError(400, "Message type is required");
+        if (typeof messageType !== typeof MessageType) throw new HttpError(400, "Invalid message type");
+
+        const result = await prisma.$transaction(async (tx) => {
+            let existingRoom: Room | null = null;
+
+            const memberIds = [senderId, partnerId];
+            const pairKey = memberIds.sort().join("_");
+
+            if (roomId && !partnerId) {
+                existingRoom = await tx.room.findFirst({
+                    where: {
+                        id: roomId,
+                        members: {
+                            some: {
+                                userId: senderId,
+                            },
+                        },
+                    },
+                    include: {
+                        members: true,
+                    },
+                });
+            } else if (!roomId && partnerId) {
+                existingRoom = await tx.room.findUnique({
+                    where: {
+                        pairKey,
+                    },
+                    include: {
+                        members: true,
+                        messages: true,
+                    },
+                });
+
+                if (!existingRoom) {
+                    try {
+                        existingRoom = await tx.room.create({
+                            data: {
+                                pairKey,
+                                members: {
+                                    create: [{ userId: senderId }, { userId: partnerId }],
+                                },
+                            },
+                            include: {
+                                members: true,
+                                messages: true,
+                            },
+                        });
+                    } catch (error) {
+                        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+                            existingRoom = await tx.room.findUnique({
+                                where: {
+                                    pairKey,
+                                },
+                                include: {
+                                    members: true,
+                                    messages: true,
+                                },
+                            });
+                        } else {
+                            throw error;
+                        }
+                    }
+                }
+            }
+
+            if (!existingRoom) throw new HttpError(404, "Room not found");
+
+            const newMessage = await tx.message.create({
+                data: {
+                    senderId,
+                    messageType,
+                    content: content.trim(),
+                    roomId: existingRoom.id,
+                },
+                include: {
+                    user: true,
+                },
+            });
+
+            await tx.room.update({
+                where: {
+                    id: existingRoom.id,
+                },
+                data: {
+                    lastMessageId: newMessage.id,
+                    lastMessageAt: newMessage.createdAt,
+                },
+            });
+
+            return { roomId: existingRoom.id, message: newMessage };
+        });
+
+        return result;
+    }, "sendMessage");
+
+    return result.success ? res.status(201).json(result) : res.status(result.status).json(result);
+}
+
+export async function editMessage(req: Request, res: Response) {
+    const result = await wrapper(async () => {
+        const { id } = req.params;
+        const { content } = req.body;
+        const senderId = req.userId;
+
+        if (!senderId) throw new Error("Unauthorized. Login First");
+        if (!id || typeof id !== "string") throw new Error("Message ID is required");
+        if (!content?.trim()) throw new Error("Message is required");
+
+        const existingMessage = await prisma.message.findUnique({
+            where: {
+                id,
+            },
+            include: {
+                room: {
+                    include: {
+                        members: true,
+                    },
+                },
+            },
+        });
+
+        if (!existingMessage) throw new HttpError(404, "Message not found");
+        if (existingMessage.senderId !== senderId) throw new HttpError(400, "You can only edit your own messages");
+
+        const isMember = existingMessage.room.members.some((m) => m.userId === senderId);
+        if (!isMember) throw new HttpError(400, "Not a member of this room");
+
+        const updatedMessage = await prisma.message.update({
+            where: {
+                id,
+            },
+            data: {
+                content: content.trim(),
+            },
+            include: {
+                user: true,
+            },
+        });
+
+        return updatedMessage;
+    }, "editMessage");
+
+    return result.success ? res.status(200).json(result) : res.status(result.status).json(result);
+}
+
+export async function deleteMessage(req: Request, res: Response) {
+    const result = await wrapper(async () => {
+        const { id } = req.params;
+        const senderId = req.userId;
+
+        if (!senderId) throw new HttpError(401, "Unauthorized. Login First");
+        if (!id || typeof id !== "string") throw new HttpError(400, "Message ID is required");
+
+        const existingMessage = await prisma.message.findUnique({
+            where: {
+                id,
+            },
+            include: {
+                room: {
+                    include: {
+                        members: true,
+                    },
+                },
+            },
+        });
+
+        if (!existingMessage) throw new HttpError(404, "Message not found");
+        if (existingMessage.senderId !== senderId) throw new HttpError(400, "You can only delete your own messages");
+
+        const isMember = existingMessage.room.members.some((m) => m.userId === senderId);
+        if (!isMember) throw new HttpError(400, "Not a member of this room");
+
+        const deletedMessage = await prisma.message.delete({ where: { id } });
+
+        return deletedMessage;
+    }, "deleteMessage");
+
+    return result.success ? res.status(200).json(result) : res.status(result.status).json(result);
+}

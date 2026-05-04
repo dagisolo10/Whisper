@@ -3,7 +3,7 @@ import { getAuth } from "@clerk/express";
 import wrapper from "@/util/action-wrapper";
 import { HttpError } from "@/lib/http-error";
 import type { Request, Response } from "express";
-import type { Prisma, User } from "@prisma/client";
+import { Prisma, type User } from "@prisma/client";
 import { createUserPayloadSchema, updateUserPayloadSchema } from "@/lib/user-validation";
 
 export async function createUser(req: Request, res: Response) {
@@ -36,10 +36,10 @@ export async function createUser(req: Request, res: Response) {
         try {
             const user = await prisma.user.create({ data: createData });
             return user;
-        } catch (err: any) {
-            if (err.code === "P2002") throw new HttpError(400, "Username is already taken");
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new HttpError(400, "Username is already taken");
 
-            throw err;
+            throw error;
         }
     }, "createUser");
 
@@ -80,14 +80,14 @@ export async function updateUser(req: Request, res: Response) {
         try {
             const user = await prisma.user.update({ where: { id }, data: updateData });
             return user;
-        } catch (err: any) {
-            if (err.code === "P2002") {
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
                 throw new HttpError(400, "Username is already taken");
             }
-            if (err.code === "P2025") {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
                 throw new HttpError(404, "User not found");
             }
-            throw err;
+            throw error;
         }
     }, "updateUser");
 

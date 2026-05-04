@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import wrapper from "@/util/action-wrapper";
 import { HttpError } from "@/lib/http-error";
 import type { Request, Response } from "express";
@@ -38,15 +39,15 @@ export async function createRoom(req: Request, res: Response) {
             });
 
             return room;
-        } catch (err: any) {
-            if (err.code === "P2002") {
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
                 return await prisma.room.findUnique({
                     where: { pairKey },
                     include: { members: { include: { user: true } }, messages: { include: { user: true } } },
                 });
             }
 
-            throw err;
+            throw error;
         }
     }, "createRoom");
 
