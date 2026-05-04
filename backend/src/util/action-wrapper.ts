@@ -1,3 +1,5 @@
+import { HttpError } from "@/lib/http-error";
+
 interface Failure {
     error: string;
     success: false;
@@ -5,7 +7,7 @@ interface Failure {
 }
 
 interface Success<T> {
-    data?: T;
+    data: T;
     success: true;
 }
 

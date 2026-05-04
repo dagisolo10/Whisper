@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import wrapper from "@/util/action-wrapper";
+import { HttpError } from "@/lib/http-error";
 import type { Request, Response } from "express";
 
 export async function createRoom(req: Request, res: Response) {
@@ -8,15 +9,14 @@ export async function createRoom(req: Request, res: Response) {
         const partnerId = req.body.partnerId as string;
 
         if (!userId) throw new HttpError(401, "Unauthorized. Login First");
+        if (!partnerId) throw new HttpError(400, "partnerId is required");
+        if (partnerId === userId) throw new HttpError(400, "Cannot create room with yourself");
 
         const memberIds = [userId, partnerId];
-
-        if (memberIds.length !== 2) throw new HttpError(400, "Room require exactly two members");
+        const pairKey = memberIds.sort().join("_");
 
         const existingRoom = await prisma.room.findFirst({
-            where: {
-                AND: memberIds.map((id) => ({ members: { some: { userId: id } } })),
-            },
+            where: { pairKey },
             include: {
                 members: { include: { user: true } },
                 messages: { include: { user: true }, orderBy: { createdAt: "asc" } },
@@ -26,7 +26,10 @@ export async function createRoom(req: Request, res: Response) {
         if (existingRoom && existingRoom.members.length === 2) return existingRoom;
 
         const room = await prisma.room.create({
-            data: { members: { create: memberIds.map((id) => ({ userId: id })) } },
+            data: {
+                pairKey,
+                members: { create: memberIds.map((id) => ({ userId: id })) },
+            },
             include: {
                 members: { include: { user: true } },
                 messages: { include: { user: true }, orderBy: { createdAt: "asc" } },
@@ -43,17 +46,27 @@ export async function getRooms(req: Request, res: Response) {
     const result = await wrapper(async () => {
         const userId = req.userId;
 
-        if (!userId) throw new Error("Unauthorized. Login First");
+        if (!userId) throw new HttpError(401, "Unauthorized. Login First");
 
         const rooms = await prisma.room.findMany({
             where: { members: { some: { userId } } },
             include: {
-                lastMessage: true,
+                lastMessage: { include: { user: true } },
                 members: { include: { user: true } },
-                messages: { include: { user: true }, orderBy: { createdAt: "desc" } },
-                _count: { select: { messages: { where: { read: false } } } },
+                _count: {
+                    select: {
+                        messages: {
+                            where: {
+                                read: false,
+                                senderId: {
+                                    not: userId,
+                                },
+                            },
+                        },
+                    },
+                },
             },
-            orderBy: [{ lastMessage: { createdAt: "desc" } }, { updatedAt: "desc" }],
+            orderBy: [{ lastMessageAt: "desc" }, { updatedAt: "desc" }],
         });
 
         return rooms;
@@ -67,11 +80,22 @@ export async function getConversation(req: Request, res: Response) {
         const roomId = req.params.id as string;
         const userId = req.userId;
 
-        if (!userId) throw new Error("Unauthorized. Login First");
+        if (!userId) throw new HttpError(401, "Unauthorized. Login First");
 
         const roomData = await prisma.$transaction(async (tx) => {
+            const roomAccess = await tx.room.findFirst({
+                where: { id: roomId, members: { some: { userId } } },
+                select: { id: true },
+            });
+
+            if (!roomAccess) throw new HttpError(404, "Room not found");
+
             await tx.message.updateMany({
-                where: { roomId, read: false, senderId: { not: userId } },
+                where: {
+                    roomId,
+                    read: false,
+                    senderId: { not: userId },
+                },
                 data: { read: true },
             });
 
@@ -83,7 +107,7 @@ export async function getConversation(req: Request, res: Response) {
                 },
             });
 
-            if (!room) throw new Error("Room not found");
+            if (!room) throw new HttpError(404, "Room not found");
 
             return room;
         });

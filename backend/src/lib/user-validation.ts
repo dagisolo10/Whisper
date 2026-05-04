@@ -7,7 +7,8 @@ export function sanitizeUsername(value: string): string {
         .replace(/[^a-z0-9._]/g, "")
         .replace(/[._]{2,}/g, (m) => m.charAt(0))
         .replace(/^[._]+|[._]+$/g, "")
-        .slice(0, 24);
+        .slice(0, 24)
+        .replace(/^[._]+|[._]+$/g, "");
 }
 
 export const createUserPayloadSchema = z.object({
@@ -17,8 +18,8 @@ export const createUserPayloadSchema = z.object({
         .string()
         .trim()
         .max(160, "Bio must be 160 characters or fewer")
-        .optional()
-        .transform((bio: string | undefined) => (bio && bio.length > 0 ? bio : undefined)),
+        .transform((bio: string | undefined) => (bio && bio.length > 0 ? bio : undefined))
+        .optional(),
     avatarUrl: z
         .string()
         .trim()
@@ -33,8 +34,8 @@ export const updateUserPayloadSchema = z.object({
         .string()
         .trim()
         .max(160, "Bio must be 160 characters or fewer")
-        .optional()
-        .transform((bio: string | undefined) => (bio && bio.length > 0 ? bio : null)),
+        .transform((bio: string | undefined) => (bio && bio.length > 0 ? bio : null))
+        .optional(),
     avatarUrl: z
         .string()
         .trim()

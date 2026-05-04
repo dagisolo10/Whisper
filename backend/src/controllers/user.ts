@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma.js";
 import wrapper from "@/util/action-wrapper";
+import { HttpError } from "@/lib/http-error";
 import type { Request, Response } from "express";
 import type { Prisma, User } from "@prisma/client";
 import { createUserPayloadSchema, updateUserPayloadSchema } from "@/lib/user-validation";
@@ -22,12 +23,13 @@ export async function createUser(req: Request, res: Response) {
             throw new HttpError(400, "Username is already taken by another account.");
         }
 
-        const createData = {
+        const createData: Prisma.UserCreateInput = {
             id,
             name,
             username,
             ...(bio !== undefined ? { bio } : {}),
             ...(avatarUrl !== undefined ? { avatarUrl } : {}),
+            lastOnlineAt: new Date(),
         };
 
         try {
@@ -66,9 +68,10 @@ export async function updateUser(req: Request, res: Response) {
         }
 
         const updateData: Prisma.UserUpdateInput = {};
+        updateData.lastOnlineAt = new Date();
+        if (bio !== undefined) updateData.bio = bio;
         if (name !== undefined) updateData.name = name;
         if (username !== undefined) updateData.username = username;
-        if (bio !== undefined) updateData.bio = bio;
         if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
 
         if (Object.keys(updateData).length === 0) throw new HttpError(400, "No fields provided for update");
@@ -79,6 +82,9 @@ export async function updateUser(req: Request, res: Response) {
         } catch (err: any) {
             if (err.code === "P2002") {
                 throw new HttpError(400, "Username is already taken");
+            }
+            if (err.code === "P2025") {
+                throw new HttpError(404, "User not found");
             }
             throw err;
         }
@@ -109,8 +115,10 @@ export async function searchUser(req: Request, res: Response) {
 
         if (!id) throw new HttpError(401, "Unauthorized. Login First");
 
-        const name = req.query.name as string | undefined;
-        const username = req.query.username as string | undefined;
+        const rawName = req.query.name;
+        const rawUsername = req.query.username;
+        const name = typeof rawName === "string" ? rawName : undefined;
+        const username = typeof rawUsername === "string" ? rawUsername : undefined;
 
         if (!name && !username) {
             throw new HttpError(400, "Provide at least a name or username to search");
@@ -137,6 +145,7 @@ export async function searchUser(req: Request, res: Response) {
                 avatarUrl: true,
                 bio: true,
             },
+            take: 50,
         });
 
         return users;

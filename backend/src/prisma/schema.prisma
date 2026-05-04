@@ -31,6 +31,8 @@ model Member {
 
 model Room {
     id            String    @id @default(uuid())
+    pairKey       String    @unique
+    lastMessageAt DateTime?
     lastMessageId String?   @unique
     lastMessage   Message?  @relation("LastMessage", fields: [lastMessageId], references: [id])
     messages      Message[] @relation("RoomMessages")
