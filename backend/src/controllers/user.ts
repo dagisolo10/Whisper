@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma.js";
+import { getAuth } from "@clerk/express";
 import wrapper from "@/util/action-wrapper";
 import { HttpError } from "@/lib/http-error";
 import type { Request, Response } from "express";
@@ -7,7 +8,7 @@ import { createUserPayloadSchema, updateUserPayloadSchema } from "@/lib/user-val
 
 export async function createUser(req: Request, res: Response) {
     const result = await wrapper(async () => {
-        const id = req.userId;
+        const { userId: id } = getAuth(req);
 
         if (!id) throw new HttpError(401, "Unauthorized. Login First");
 
