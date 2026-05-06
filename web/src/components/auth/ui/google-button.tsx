@@ -17,15 +17,13 @@ export default function GoogleButton({ mode }: GoogleButtonProps) {
     const signInState = useSignIn();
     const signUpState = useSignUp();
 
-    const isLoaded = signInState.isLoaded || signUpState.isLoaded;
+    const isLoaded = mode === "sign-in" ? signInState.isLoaded : signUpState.isLoaded;
 
     const handleGoogleAuth = async () => {
         setError(null);
 
         if (mode === "sign-in") {
-            if (!signInState.isLoaded) {
-                return;
-            }
+            if (!signInState.isLoaded) return;
 
             try {
                 setIsLoading(true);

@@ -81,7 +81,7 @@ export default function Side() {
                     const mode = searchParams.get("mode");
                     const replacement = `/${mode}`;
 
-                    const mapCheck = pathname === "/verification" ? replacement : pathname;
+                    const mapCheck = pathname === "/verification" && ACTIVE_STEP_MAP[replacement] ? replacement : pathname;
                     const isActive = ACTIVE_STEP_MAP[mapCheck] === step.id;
                     const Icon = step.icon;
 

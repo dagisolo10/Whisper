@@ -51,7 +51,7 @@ export default function Verification() {
                     });
                     return;
                 }
-            } else if (mode === "sign-in" && signIn) {
+            } else if ((mode === "sign-in" || mode === "forgot-password") && signIn) {
                 await signIn.mfa.verifyEmailCode({ code });
 
                 if (signIn.status === "complete") {
@@ -79,7 +79,7 @@ export default function Verification() {
         try {
             if (mode === "sign-up" && signUp) {
                 await signUp.verifications.sendEmailCode();
-            } else if (mode === "sign-in" && signIn) {
+            } else if ((mode === "sign-in" || mode === "forgot-password") && signIn) {
                 await signIn.mfa.sendEmailCode();
             }
 
@@ -91,11 +91,17 @@ export default function Verification() {
         }
     };
 
+    const getBackHref = () => {
+        if (mode === "sign-up") return "/sign-up";
+        if (mode === "forgot-password") return "/forgot-password";
+        return "/sign-in";
+    };
+
     return (
         <AuthPanel
             title="Verify your identity"
             description={mode === "sign-up" ? "Enter the code we sent to create your account." : "Enter the verification code to sign in."}
-            redirect={<FooterRedirect text="Need to start again?" href={mode === "sign-up" ? "/sign-up" : "/sign-in"} link="Go back" />}
+            redirect={<FooterRedirect text="Need to start again?" href={getBackHref()} link="Go back" />}
         >
             <div className="space-y-6">
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
@@ -136,7 +142,12 @@ export default function Verification() {
 
                     {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
-                    <Button type="button" className="h-11 w-full text-sm font-semibold" onClick={handleVerify} disabled={verifying || !code}>
+                    <Button
+                        type="button"
+                        className="h-11 w-full text-sm font-semibold"
+                        onClick={handleVerify}
+                        disabled={verifying || !code || !clerkLoaded}
+                    >
                         <Loader loading={verifying} />
                         <p>{verifying ? "Verifying..." : "Verify"}</p>
                         <ArrowRight className="size-4" />
@@ -147,7 +158,7 @@ export default function Verification() {
                         variant="ghost"
                         className="w-full text-sm text-zinc-400 hover:text-white"
                         onClick={resendCode}
-                        disabled={resending}
+                        disabled={resending || !clerkLoaded}
                     >
                         <Loader loading={resending} />
                         <p>Resend code</p>

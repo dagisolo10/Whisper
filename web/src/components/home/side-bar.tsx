@@ -35,10 +35,11 @@ export default function Sidebar({ sidebar, setSidebar }: SidebarProp) {
             )}
         >
             <aside
-                onClick={(event) => event.stopPropagation()}
                 role="dialog"
+                inert={!sidebar}
                 aria-modal="true"
                 aria-label="Navigation"
+                onClick={(event) => event.stopPropagation()}
                 className={cn(
                     sidebar ? "translate-x-0" : "-translate-x-full",
                     "bg-background absolute top-0 left-0 flex h-full w-1/4 flex-col gap-4 border-r px-4 py-6 transition-transform duration-500",
@@ -49,7 +50,7 @@ export default function Sidebar({ sidebar, setSidebar }: SidebarProp) {
 
                     <div>
                         <p className="text-sm font-semibold">{user?.fullName || "Whisper"}</p>
-                        <p className="text-[11px] text-zinc-400">{user?.primaryEmailAddress?.emailAddress || "Signed in"}</p>
+                        <p className="text-muted-foreground text-[11px]">{user?.primaryEmailAddress?.emailAddress || "Signed in"}</p>
                     </div>
                 </div>
 

@@ -40,35 +40,6 @@ export default function ForgotPasswordForm() {
         return "Choose a new password";
     }, [step]);
 
-    const sendResetCode = async () => {
-        if (!isLoaded) return;
-
-        setSending(true);
-        setError(null);
-
-        try {
-            const { error: createError } = await signIn.create({ identifier: email });
-
-            if (createError) {
-                setError(getClerkErrorMessage(createError, "We couldn't start the password reset."));
-                return;
-            }
-
-            const { error: sendCodeError } = await signIn.resetPasswordEmailCode.sendCode();
-
-            if (sendCodeError) {
-                setError(getClerkErrorMessage(sendCodeError, "We couldn't send the reset code."));
-                return;
-            }
-
-            setStep("code");
-        } catch (err) {
-            setError(getClerkErrorMessage(err, "We couldn't send a reset code to that email."));
-        } finally {
-            setSending(false);
-        }
-    };
-
     const verifyCode = async () => {
         if (!isLoaded) return;
 
@@ -88,7 +59,7 @@ export default function ForgotPasswordForm() {
                 return;
             }
 
-            setError("That verification code was not accepted. Try again or request a fresh code.");
+            setError(`Code was accepted but the flow can't continue automatically (status: ${signIn.status ?? "unknown"}).`);
         } catch (err) {
             setError(getClerkErrorMessage(err, "We couldn't verify that code."));
         } finally {
@@ -125,11 +96,12 @@ export default function ForgotPasswordForm() {
 
             if (signIn.status === "needs_second_factor") {
                 await signIn.mfa.sendEmailCode();
-                router.push("/verification?mode=sign-in");
+                router.push("/verification?mode=forgot-password");
                 return;
             }
 
-            setError(`Your password was updated, but the session couldn't be finalized automatically (status: ${signIn.status ?? "unknown"}).`);
+            console.warn("Unhandled signIn.status after submitPassword:", signIn.status);
+            setError("Your password was updated, but we couldn't sign you in automatically. Please sign in again.");
         } catch (err) {
             setError(getClerkErrorMessage(err, "We couldn't update your password."));
         } finally {
@@ -137,10 +109,10 @@ export default function ForgotPasswordForm() {
         }
     };
 
-    const resendCode = async () => {
+    const requestResetCode = async (setBusy: (v: boolean) => void, advance: boolean) => {
         if (!isLoaded) return;
 
-        setResending(true);
+        setBusy(true);
         setError(null);
 
         try {
@@ -158,13 +130,16 @@ export default function ForgotPasswordForm() {
                 return;
             }
 
-            setStep("code");
+            if (advance) setStep("code");
         } catch (err) {
             setError(getClerkErrorMessage(err, "We couldn't resend the reset code."));
         } finally {
             setResending(false);
         }
     };
+
+    const sendResetCode = () => requestResetCode(setSending, true);
+    const resendCode = () => requestResetCode(setResending, false);
 
     const resetFlow = () => {
         setCode("");
@@ -197,7 +172,8 @@ export default function ForgotPasswordForm() {
                 verifying={verifying}
                 onVerify={verifyCode}
                 onResend={resendCode}
-                disabled={resending || verifying || !isLoaded || !code}
+                disabledResend={resending || verifying || !isLoaded}
+                disabledVerify={resending || verifying || !isLoaded || !code}
             />
 
             <PasswordStep

@@ -31,7 +31,7 @@ export default function SignInForm() {
         }
 
         const formData = new FormData(event.currentTarget);
-        const email = String(formData.get("email") || "");
+        const email = String(formData.get("email") || "").trim();
         const password = String(formData.get("password") || "");
 
         try {

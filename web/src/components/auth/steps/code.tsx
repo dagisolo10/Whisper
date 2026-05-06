@@ -7,19 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import Loader from "@/components/loader";
-import { BaseProp } from "../form/forgot-password";
+import type { BaseProp } from "@/components/auth/form/forgot-password";
 
 interface CodeProp extends BaseProp {
     code: string;
     resending: boolean;
-    disabled: boolean;
+    disabledVerify: boolean;
+    disabledResend: boolean;
     verifying: boolean;
     onVerify: () => void;
     onResend: () => void;
     setCode: Dispatch<SetStateAction<string>>;
 }
 
-export default function CodeStep({ code, setCode, error, resending, verifying, disabled, onVerify, onResend, step }: CodeProp) {
+export default function CodeStep({ code, setCode, error, resending, verifying, disabledVerify, disabledResend, onVerify, onResend, step }: CodeProp) {
     if (step !== "code") return null;
 
     return (
@@ -47,12 +48,13 @@ export default function CodeStep({ code, setCode, error, resending, verifying, d
                     variant="outline"
                     className="h-11 flex-1 border-white/10 bg-white/5 text-sm text-white hover:bg-white/10"
                     onClick={onResend}
-                    disabled={disabled}
+                    disabled={disabledResend}
                 >
                     <Loader loading={resending} />
                     <p>Resend</p>
                 </Button>
-                <Button type="button" className="h-11 flex-1 text-sm font-semibold" onClick={onVerify} disabled={disabled}>
+
+                <Button type="button" className="h-11 flex-1 text-sm font-semibold" onClick={onVerify} disabled={disabledVerify}>
                     <Loader loading={verifying} />
                     <p>{verifying ? "Verifying..." : "Verify code"}</p>
                 </Button>
