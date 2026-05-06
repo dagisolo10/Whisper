@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { SyntheticEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
-import { useSignIn } from "@clerk/nextjs/legacy";
+import { useClerk, useSignIn } from "@clerk/nextjs";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,15 +13,17 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { getClerkErrorMessage } from "@/lib/clerk-errors";
 
 export default function SignInForm() {
+    const { signIn } = useSignIn();
+    const { loaded: isLoaded, setActive } = useClerk();
+    // const { isLoaded, signIn, setActive } = useSignIn();
+
     const router = useRouter();
-    const { isLoaded, signIn, setActive } = useSignIn();
 
     const [pending, setPending] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
     const [passwordVisible, setPasswordVisible] = useState(false);
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSignIn = async (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         if (!isLoaded) {
@@ -36,29 +38,23 @@ export default function SignInForm() {
             setPending(true);
             setError(null);
 
-            const result = await signIn.create({
-                identifier: email,
-                password,
-            });
+            await signIn.password({ emailAddress: email, password });
 
-            if (result.status === "complete" && result.createdSessionId) {
+            if (signIn.status === "complete") {
                 await setActive({
-                    session: result.createdSessionId,
-                    navigate: async () => {
-                        router.replace("/");
-                    },
+                    session: signIn.createdSessionId,
+                    navigate: () => router.replace("/"),
                 });
                 return;
             }
 
-            if (result.status === "needs_second_factor") {
-                setError(
-                    "Multi-factor authentication is required for this account, but it isn't supported yet. Please contact support or try a different sign-in method.",
-                );
+            if (signIn.status === "needs_second_factor") {
+                await signIn.mfa.sendEmailCode();
+                router.push("/verification?mode=sign-in");
                 return;
             }
 
-            setError("This sign-in attempt is not finished yet. Please try again or use Google sign-in.");
+            setError(`This sign-in attempt is not finished yet. Please try again or use Google sign-in. ${signIn}`);
         } catch (err) {
             setError(getClerkErrorMessage(err, "Unable to sign in with email and password."));
         } finally {
@@ -67,7 +63,9 @@ export default function SignInForm() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="w-full">
+        <form onSubmit={handleSignIn} className="w-full">
+            <div id="clerk-captcha" className="mx-auto flex justify-center" />
+
             <FieldGroup className="gap-4">
                 <Field>
                     <Label htmlFor="email" className="font-semibold text-zinc-200">
@@ -119,8 +117,6 @@ export default function SignInForm() {
                     {pending ? "Signing in..." : "Sign in"}
                     <ArrowRight className="size-4" />
                 </Button>
-
-                <div id="clerk-captcha" />
             </FieldGroup>
         </form>
     );

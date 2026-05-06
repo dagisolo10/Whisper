@@ -40,7 +40,7 @@ export default function Sidebar({ sidebar, setSidebar }: SidebarProp) {
                     <UserButton />
 
                     <div>
-                        <p className="text-sm font-semibold text-white">{user?.fullName || "Whisper"}</p>
+                        <p className="text-sm font-semibold">{user?.fullName || "Whisper"}</p>
                         <p className="text-[11px] text-zinc-400">{user?.primaryEmailAddress?.emailAddress || "Signed in"}</p>
                     </div>
                 </div>
@@ -50,7 +50,7 @@ export default function Sidebar({ sidebar, setSidebar }: SidebarProp) {
                         <Button
                             key={label}
                             variant={"ghost"}
-                            className={cn(active ? "text-white" : "text-muted-foreground", "h-10 w-full justify-start gap-3 rounded-xl px-4 text-sm")}
+                            className={cn(active ? "" : "text-muted-foreground", "h-10 w-full justify-start gap-3 rounded-xl px-4 text-sm")}
                         >
                             <Icon className="size-5" />
                             <span>{label}</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { UserPlus, LogIn, KeyRound, ShieldCheck, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,6 +49,14 @@ const CONTENT_MAP = {
     },
 };
 
+const ACTIVE_STEP_MAP: Record<string, number> = {
+    "/sign-in": 1,
+    "/sign-in/continue": 1,
+    "/sign-up": 2,
+    "/verification": 2,
+    "/forgot-password": 3,
+};
+
 const NAV_STEPS = [
     { id: 1, text: "Sign In", href: "/sign-in", icon: LogIn },
     { id: 2, text: "Sign Up", href: "/sign-up", icon: UserPlus },
@@ -57,6 +65,7 @@ const NAV_STEPS = [
 
 export default function Side() {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const content = CONTENT_MAP[pathname as keyof typeof CONTENT_MAP] || CONTENT_MAP["/sign-in"];
 
     // bg-[radial-gradient(circle_at_top_left,rgba(86,131,255,0.2),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_30%),linear-gradient(160deg,#12131a_0%,#161922_48%,#0e1016_100%)]
@@ -71,7 +80,11 @@ export default function Side() {
 
             <div className="mt-auto grid w-full grid-cols-3 gap-4">
                 {NAV_STEPS.map((step) => {
-                    const isActive = pathname === step.href;
+                    const mode = searchParams.get("mode");
+                    const replacement = `/${mode}`;
+
+                    const mapCheck = pathname === "/verification" ? replacement : pathname;
+                    const isActive = ACTIVE_STEP_MAP[mapCheck] === step.id;
                     const Icon = step.icon;
 
                     return (

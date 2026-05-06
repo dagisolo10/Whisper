@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowRight, Mail } from "lucide-react";
-import { useAuth } from "@clerk/nextjs";
-import { useSignUp } from "@clerk/nextjs/legacy";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowRight, Mail, Star } from "lucide-react";
+import { useAuth, useClerk, useSignIn } from "@clerk/nextjs";
+import { useSignUp } from "@clerk/nextjs";
 
 import AuthPanel from "@/components/auth/auth-panel";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,14 @@ import { getClerkErrorMessage } from "@/lib/clerk-errors";
 import FooterRedirect from "@/components/auth/footer-redirect";
 
 export default function Verification() {
+    const { signUp } = useSignUp();
+    const { signIn } = useSignIn();
     const { isSignedIn } = useAuth();
-    const { isLoaded, signUp, setActive } = useSignUp();
+    const { loaded: clerkLoaded, setActive } = useClerk();
 
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const mode = searchParams.get("mode") || "sign-up";
 
     const [code, setCode] = useState("");
     const [resent, setResent] = useState(false);
@@ -26,49 +30,57 @@ export default function Verification() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (isSignedIn) {
-            router.replace("/");
-        }
+        if (isSignedIn) router.replace("/");
     }, [isSignedIn, router]);
 
-    const verifyEmail = async () => {
-        if (!isLoaded) {
-            return;
-        }
+    const handleVerify = async () => {
+        if (!clerkLoaded) return;
+        setPending(true);
+        setError(null);
 
         try {
-            setPending(true);
-            setError(null);
+            if (mode === "sign-up" && signUp) {
+                await signUp.verifications.verifyEmailCode({ code });
 
-            const result = await signUp.attemptEmailAddressVerification({ code });
+                if (signUp.status === "complete") {
+                    await setActive({
+                        session: signUp.createdSessionId,
+                        navigate: () => router.replace("/"),
+                    });
+                    return;
+                }
+            } else if (mode === "sign-in" && signIn) {
+                await signIn.mfa.verifyBackupCode({ code });
 
-            if (result.status === "complete" && result.createdSessionId) {
-                await setActive({
-                    session: result.createdSessionId,
-                    navigate: async () => {
-                        router.replace("/");
-                    },
-                });
-                return;
+                if (signIn.status === "complete") {
+                    await setActive({
+                        session: signIn.createdSessionId,
+                        navigate: () => router.replace("/"),
+                    });
+                    return;
+                }
             }
 
             setError("That verification code wasn’t accepted. Double-check it and try again.");
         } catch (err) {
-            setError(getClerkErrorMessage(err, "We couldn't verify your email code."));
+            setError(getClerkErrorMessage(err, "Verification failed. Please check the code."));
         } finally {
             setPending(false);
         }
     };
 
     const resendCode = async () => {
-        if (!isLoaded) {
-            return;
-        }
+        if (!clerkLoaded) return;
+        setPending(true);
+        setError(null);
 
         try {
-            setPending(true);
-            setError(null);
-            await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+            if (mode === "sign-up" && signUp) {
+                await signUp.verifications.sendEmailCode();
+            } else if (mode === "sign-in" && signIn) {
+                await signIn.mfa.sendEmailCode();
+            }
+
             setResent(true);
         } catch (err) {
             setError(getClerkErrorMessage(err, "We couldn't resend the verification code."));
@@ -79,9 +91,9 @@ export default function Verification() {
 
     return (
         <AuthPanel
-            title="Verify your email"
-            description="Enter the code we sent to finish creating your account and unlock the app."
-            redirect={<FooterRedirect text="Need to start again?" href="/sign-up" link="Go back to sign up" />}
+            title="Verify your identity"
+            description={mode === "sign-up" ? "Enter the code we sent to create your account." : "Enter the verification code to sign in."}
+            redirect={<FooterRedirect text="Need to start again?" href={mode === "sign-up" ? "/sign-up" : "/sign-in"} link="Go back" />}
         >
             <div className="space-y-6">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -91,21 +103,27 @@ export default function Verification() {
                         </div>
                         <div className="text-left">
                             <p className="text-sm font-semibold text-white">Verification code sent</p>
-                            <p className="text-sm text-zinc-400">{signUp?.emailAddress || "Check your inbox for a 6-digit code."}</p>
+                            <p className="text-sm text-zinc-400">
+                                {mode === "sign-up" ? signUp?.emailAddress : signIn?.identifier || "Check your inbox."}
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                {!resent ? <p className="text-sm text-emerald-400">A new code has been sent to your inbox.</p> : null}
+                {!resent && (
+                    <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-4 py-3">
+                        <Star className="size-4 fill-emerald-500 text-emerald-500" />
+                        <p className="text-sm text-emerald-400">A new code has been sent to your inbox.</p>
+                    </div>
+                )}
 
                 <FieldGroup className="gap-4">
                     <Field>
-                        <Label htmlFor="verification-code" className="text-sm font-semibold text-zinc-200">
-                            Email code
+                        <Label htmlFor="code" className="text-sm font-semibold text-zinc-200">
+                            Verification Code
                         </Label>
                         <Input
-                            id="verification-code"
-                            type="text"
+                            id="code"
                             inputMode="numeric"
                             value={code}
                             onChange={(event) => setCode(event.target.value)}
@@ -116,13 +134,8 @@ export default function Verification() {
 
                     {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
-                    <Button
-                        type="button"
-                        className="h-11 w-full text-sm font-semibold"
-                        onClick={verifyEmail}
-                        disabled={pending || !isLoaded || !code}
-                    >
-                        {pending ? "Verifying..." : "Verify email"}
+                    <Button type="button" className="h-11 w-full text-sm font-semibold" onClick={handleVerify} disabled={pending || !code}>
+                        {pending ? "Verifying..." : "Verify"}
                         <ArrowRight className="size-4" />
                     </Button>
 
@@ -131,7 +144,7 @@ export default function Verification() {
                         variant="ghost"
                         className="w-full text-sm text-zinc-400 hover:text-white"
                         onClick={resendCode}
-                        disabled={pending || !isLoaded}
+                        disabled={pending}
                     >
                         Resend code
                     </Button>

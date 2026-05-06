@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useAuth, useClerk } from "@clerk/nextjs";
-import { useSignUp } from "@clerk/nextjs/legacy";
+import { useSignUp } from "@clerk/nextjs";
 
 import AuthPanel from "@/components/auth/auth-panel";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,9 @@ import { getClerkErrorMessage } from "@/lib/clerk-errors";
 import FooterRedirect from "@/components/auth/footer-redirect";
 
 export default function Page() {
-    const clerk = useClerk();
     const { isSignedIn } = useAuth();
-    const { isLoaded, signUp, setActive } = useSignUp();
+    const { signUp } = useSignUp();
+    const { loaded: isLoaded, handleRedirectCallback, setActive } = useClerk();
 
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -55,7 +55,7 @@ export default function Page() {
                 setCallbackPending(true);
                 setError(null);
 
-                await clerk.handleRedirectCallback(
+                await handleRedirectCallback(
                     {
                         signInUrl: "/sign-in",
                         signUpUrl: "/sign-up",
@@ -86,30 +86,23 @@ export default function Page() {
         return () => {
             active = false;
         };
-    }, [clerk, isOAuthCallback, router]);
+    }, [handleRedirectCallback, isOAuthCallback, router]);
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (!isLoaded) {
-            return;
-        }
+        if (!isLoaded) return;
+
+        setPending(true);
+        setError(null);
 
         try {
-            setPending(true);
-            setError(null);
+            await signUp.update({ firstName: firstName.trim(), lastName: lastName.trim() });
 
-            const result = await signUp.update({
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
-            });
-
-            if (result.status === "complete" && result.createdSessionId) {
+            if (signUp.status === "complete") {
                 await setActive({
-                    session: result.createdSessionId,
-                    navigate: async () => {
-                        router.replace("/");
-                    },
+                    session: signUp.createdSessionId,
+                    navigate: async () => router.replace("/"),
                 });
                 return;
             }
@@ -142,7 +135,9 @@ export default function Page() {
                 title="Complete your profile"
                 description="Your Google account is connected. Add the missing profile details below and we’ll finish account creation."
             >
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="w-full">
+                    <div id="clerk-captcha" className="mx-auto flex justify-center" />
+
                     <FieldGroup className="gap-4">
                         <Field>
                             <Label htmlFor="firstName" className="text-sm font-semibold text-zinc-200">
@@ -178,8 +173,6 @@ export default function Page() {
                             {pending ? "Saving profile..." : "Finish account setup"}
                             <ArrowRight className="size-4" />
                         </Button>
-
-                        <div id="clerk-captcha" />
                     </FieldGroup>
                 </form>
             </AuthPanel>

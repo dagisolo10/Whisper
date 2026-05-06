@@ -33,7 +33,7 @@ export const conversations = [
         name: "Johnny",
         preview: "Did the professor upload the worksheet?",
         time: "1h",
-        avatar: "Y",
+        avatar: "J",
         color: "from-blue-500 to-cyan-400",
     },
     {

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { SyntheticEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
-import { useSignUp } from "@clerk/nextjs/legacy";
+import { useClerk, useSignUp } from "@clerk/nextjs";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,20 +12,19 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { getClerkErrorMessage } from "@/lib/clerk-errors";
 
 export default function SignUpForm() {
+    const { signUp } = useSignUp();
+    const { loaded: isLoaded, setActive } = useClerk();
+
     const router = useRouter();
-    const { isLoaded, signUp, setActive } = useSignUp();
 
     const [pending, setPending] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
     const [passwordVisible, setPasswordVisible] = useState(false);
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSignUp = async (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (!isLoaded) {
-            return;
-        }
+        if (!isLoaded) return;
 
         const formData = new FormData(event.currentTarget);
         const firstName = String(formData.get("firstName") || "").trim();
@@ -37,25 +36,24 @@ export default function SignUpForm() {
             setPending(true);
             setError(null);
 
-            const result = await signUp.create({
-                firstName,
-                lastName,
-                emailAddress,
-                password,
-            });
+            await signUp.password({ firstName, lastName, emailAddress, password });
 
-            if (result.status === "complete" && result.createdSessionId) {
+            if (signUp.status === "complete") {
                 await setActive({
-                    session: result.createdSessionId,
-                    navigate: async () => {
-                        router.replace("/");
-                    },
+                    session: signUp.createdSessionId,
+                    navigate: () => router.replace("/"),
                 });
                 return;
             }
 
-            await result.prepareEmailAddressVerification({ strategy: "email_code" });
-            router.push("/verification");
+            if (signUp.status === "missing_requirements") {
+                await signUp.verifications.sendEmailCode();
+                router.push("/verification?mode=sign-up");
+                return;
+            }
+
+            await signUp.verifications.sendEmailCode();
+            router.push("/verification?mode=sign-up");
         } catch (err) {
             setError(getClerkErrorMessage(err, "Unable to create your account."));
         } finally {
@@ -64,7 +62,9 @@ export default function SignUpForm() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="w-full">
+        <form onSubmit={handleSignUp} className="w-full">
+            <div id="clerk-captcha" className="mx-auto flex justify-center" />
+
             <FieldGroup className="gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Field>
@@ -141,8 +141,6 @@ export default function SignUpForm() {
                     {pending ? "Creating account..." : "Create account"}
                     <ArrowRight className="size-4" />
                 </Button>
-
-                <div id="clerk-captcha" />
             </FieldGroup>
         </form>
     );
