@@ -17,10 +17,12 @@ export default function Filters({ setSidebar }: { setSidebar: (val: boolean) => 
                     key={filter.label}
                     className={cn(
                         "rounded-2xl px-2 py-3 text-center transition",
-                        filter.active ? "bg-card text-foreground border-border ring-border shadow-sm ring-1" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                        filter.active
+                            ? "bg-card text-foreground border-border ring-border shadow-sm ring-1"
+                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                     )}
                 >
-                    <div className="text-muted-foreground text-xs font-semibold">{filter.count}</div>
+                    <div className={cn("text-xs font-semibold", filter.active ? "text-foreground" : "text-muted-foreground")}>{filter.count}</div>
                     <div className="mt-1 text-xs leading-tight font-medium">{filter.label}</div>
                 </button>
             ))}

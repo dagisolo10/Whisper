@@ -1,0 +1,3 @@
+export default function Support() {
+    return <div className="flex min-h-screen items-center justify-center text-4xl">Support</div>;
+}

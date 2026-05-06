@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useAuth, useClerk } from "@clerk/nextjs";
@@ -13,21 +12,28 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getClerkErrorMessage } from "@/lib/clerk-errors";
+import FooterRedirect from "@/components/auth/footer-redirect";
 
 export default function Page() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
     const clerk = useClerk();
     const { isSignedIn } = useAuth();
     const { isLoaded, signUp, setActive } = useSignUp();
-    const [firstName, setFirstName] = useState("");
+
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackStarted = useRef(false);
+
     const [lastName, setLastName] = useState("");
     const [pending, setPending] = useState(false);
-    const [callbackPending, setCallbackPending] = useState(false);
+    const [firstName, setFirstName] = useState("");
     const [error, setError] = useState<string | null>(null);
+    const [callbackPending, setCallbackPending] = useState(false);
 
     const isOAuthCallback = useMemo(() => searchParams.has("code") || searchParams.has("state"), [searchParams]);
-    const needsNames = isLoaded && signUp?.status === "missing_requirements" && signUp.missingFields.includes("first_name") && signUp.missingFields.includes("last_name");
+    const needsNames =
+        isLoaded &&
+        signUp?.status === "missing_requirements" &&
+        (signUp.missingFields.includes("first_name") || signUp.missingFields.includes("last_name"));
 
     useEffect(() => {
         if (isSignedIn) {
@@ -36,9 +42,11 @@ export default function Page() {
     }, [isSignedIn, router]);
 
     useEffect(() => {
-        if (!isOAuthCallback || callbackPending) {
+        if (!isOAuthCallback || callbackStarted.current) {
             return;
         }
+
+        callbackStarted.current = true;
 
         let active = true;
 
@@ -78,7 +86,7 @@ export default function Page() {
         return () => {
             active = false;
         };
-    }, [callbackPending, clerk, isOAuthCallback, router]);
+    }, [clerk, isOAuthCallback, router]);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -116,7 +124,10 @@ export default function Page() {
 
     if (callbackPending) {
         return (
-            <AuthPanel title="Finishing Google sign-in" description="We’re securely completing the OAuth callback and checking whether your account needs anything else.">
+            <AuthPanel
+                title="Finishing Google sign-in"
+                description="We’re securely completing the OAuth callback and checking whether your account needs anything else."
+            >
                 <div className="flex flex-col items-center gap-4 py-12 text-center">
                     <Loader2 className="size-8 animate-spin text-sky-300" />
                     <p className="text-sm text-zinc-400">Finalizing your session...</p>
@@ -127,7 +138,10 @@ export default function Page() {
 
     if (needsNames) {
         return (
-            <AuthPanel title="Complete your profile" description="Your Google account is connected. Add the missing profile details below and we’ll finish account creation.">
+            <AuthPanel
+                title="Complete your profile"
+                description="Your Google account is connected. Add the missing profile details below and we’ll finish account creation."
+            >
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <FieldGroup className="gap-4">
                         <Field>
@@ -176,14 +190,7 @@ export default function Page() {
         <AuthPanel
             title="Authentication complete"
             description="If we didn’t redirect automatically, use the button below to continue."
-            redirect={
-                <>
-                    Need a different account?{" "}
-                    <Link href="/sign-in" className="font-semibold text-sky-300 transition-colors hover:text-sky-200">
-                        Back to sign in
-                    </Link>
-                </>
-            }
+            redirect={<FooterRedirect text="Need a different account?" href="/sign-in" link="Back to sign in" />}
         >
             <div className="space-y-4">
                 {error ? <p className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-300">{error}</p> : null}

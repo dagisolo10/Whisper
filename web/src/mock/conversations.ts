@@ -75,7 +75,7 @@ export const conversations = [
     },
     {
         name: "Dad",
-        preview: "Call me when you're free, Dagmawi.",
+        preview: "Call me when you're free.",
         time: "10h",
         avatar: "D",
         color: "from-slate-600 to-slate-800",
@@ -106,7 +106,7 @@ export const conversations = [
         name: "Jason",
         preview: "The login flow feels much smoother now.",
         time: "Tue",
-        avatar: "K",
+        avatar: "J",
         color: "from-orange-300 to-red-400",
     },
     {

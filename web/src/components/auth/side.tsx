@@ -75,14 +75,30 @@ export default function Side() {
                     const Icon = step.icon;
 
                     return (
-                        <Link key={step.id} href={step.href} className={cn("transition-all duration-200", isActive ? "pointer-events-none" : "hover:opacity-70")}>
+                        <Link
+                            key={step.id}
+                            href={step.href}
+                            tabIndex={isActive ? -1 : undefined}
+                            aria-current={isActive ? "page" : undefined}
+                            className={cn("transition-all duration-200", isActive ? "pointer-events-none" : "hover:opacity-70")}
+                        >
                             <Card
-                                className={cn("flex flex-col gap-4 border-none p-4 shadow-none transition-colors", isActive ? "bg-white/15 shadow-2xl ring-1 shadow-white/5" : "bg-white/5 opacity-60")}
+                                className={cn(
+                                    "flex flex-col gap-4 border-none p-4 shadow-none transition-colors",
+                                    isActive ? "bg-white/15 shadow-2xl ring-1 shadow-white/5" : "bg-white/5 opacity-60",
+                                )}
                             >
-                                <div className={cn("flex size-8 items-center justify-center rounded-full transition-colors", isActive ? "bg-white text-zinc-950" : "bg-zinc-800 text-white")}>
+                                <div
+                                    className={cn(
+                                        "flex size-8 items-center justify-center rounded-full transition-colors",
+                                        isActive ? "bg-white text-zinc-950" : "bg-zinc-800 text-white",
+                                    )}
+                                >
                                     <Icon className="size-4" />
                                 </div>
-                                <p className={cn("text-xs leading-tight font-semibold", isActive ? "text-white" : "text-muted-foreground")}>{step.text}</p>
+                                <p className={cn("text-xs leading-tight font-semibold", isActive ? "text-white" : "text-muted-foreground")}>
+                                    {step.text}
+                                </p>
                             </Card>
                         </Link>
                     );

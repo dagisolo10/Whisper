@@ -19,7 +19,10 @@ export default function TopBar() {
 
                 <div className="flex items-center gap-3">
                     <div className="text-primary-foreground bg-primary rounded-full px-4 py-2 text-sm font-semibold shadow-sm">234.7k AC</div>
-                    <button className="text-muted-foreground border-border flex size-10 items-center justify-center rounded-full border">
+                    <button
+                        aria-label="Notifications"
+                        className="text-muted-foreground border-border flex size-10 items-center justify-center rounded-full border"
+                    >
                         <Bell className="size-4" />
                     </button>
                     <div className="from-primary to-chart-3 text-primary-foreground border-border flex size-10 items-center justify-center rounded-full border bg-linear-to-br font-semibold">

@@ -24,7 +24,10 @@ export default function Sidebar({ sidebar, setSidebar }: SidebarProp) {
     return (
         <div
             onClick={() => setSidebar(false)}
-            className={cn("fixed inset-0 z-50 hidden transition-colors duration-300 lg:block", sidebar ? "pointer-events-auto bg-black/50" : "pointer-events-none bg-transparent")}
+            className={cn(
+                "fixed inset-0 z-50 hidden transition-colors duration-300 lg:block",
+                sidebar ? "pointer-events-auto bg-black/50" : "pointer-events-none bg-transparent",
+            )}
         >
             <aside
                 onClick={(event) => event.stopPropagation()}
@@ -46,7 +49,6 @@ export default function Sidebar({ sidebar, setSidebar }: SidebarProp) {
                     {sidebarLinks.map(({ label, icon: Icon, active }) => (
                         <Button
                             key={label}
-                            // variant={active ? "default" : "ghost"}
                             variant={"ghost"}
                             className={cn(active ? "text-white" : "text-muted-foreground", "h-10 w-full justify-start gap-3 rounded-xl px-4 text-sm")}
                         >

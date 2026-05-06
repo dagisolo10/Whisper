@@ -3,9 +3,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { chatThread } from "@/mock/chat-thread";
 import ChatCard from "@/components/home/chat-card";
-import { BadgeCheck, Info, Paperclip, Phone, SendHorizontal, Smile, Video } from "lucide-react";
+import { BadgeCheck, Info, Paperclip, Phone, SendHorizontal, Smile, Video, X } from "lucide-react";
 
-export default function ChatView({}: { onClose: () => void }) {
+export default function ChatView({ onClose }: { onClose: () => void }) {
     const { participant, messages } = chatThread;
 
     return (
@@ -13,12 +13,16 @@ export default function ChatView({}: { onClose: () => void }) {
             <header className="border-border bg-background/95 flex items-center justify-between border-b px-6 py-4 backdrop-blur">
                 <div className="flex items-center gap-3">
                     <div className="relative">
-                        <div className={cn(participant.color, "flex size-8 items-center justify-center rounded-full bg-linear-to-br text-xs font-semibold text-white shadow-sm")}>
+                        <div
+                            className={cn(
+                                participant.color,
+                                "flex size-8 items-center justify-center rounded-full bg-linear-to-br text-xs font-semibold text-white shadow-sm",
+                            )}
+                        >
                             {participant.avatar}
                         </div>
                         <div className="absolute right-0 bottom-0 size-1.5 rounded-full bg-emerald-500" />
                     </div>
-
                     <div>
                         <div className="mb-1 flex items-center gap-2">
                             <h2 className="font-jakarta text-sm font-semibold">{participant.name}</h2>
@@ -29,13 +33,16 @@ export default function ChatView({}: { onClose: () => void }) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="rounded-full">
+                    <Button variant="ghost" size="icon" className="rounded-full" onClick={onClose} aria-label="Close chat">
+                        <X className="size-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="rounded-full" aria-label="Phone call">
                         <Phone className="size-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="rounded-full">
+                    <Button variant="ghost" size="icon" className="rounded-full" aria-label="Video call">
                         <Video className="size-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="rounded-full">
+                    <Button variant="ghost" size="icon" className="rounded-full" aria-label="Info dropdown">
                         <Info className="size-4" />
                     </Button>
                 </div>

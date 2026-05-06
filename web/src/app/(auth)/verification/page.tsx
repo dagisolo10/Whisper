@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Mail } from "lucide-react";
@@ -13,12 +12,16 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getClerkErrorMessage } from "@/lib/clerk-errors";
+import FooterRedirect from "@/components/auth/footer-redirect";
 
 export default function Verification() {
-    const router = useRouter();
     const { isSignedIn } = useAuth();
     const { isLoaded, signUp, setActive } = useSignUp();
+
+    const router = useRouter();
+
     const [code, setCode] = useState("");
+    const [resent, setResent] = useState(false);
     const [pending, setPending] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +69,7 @@ export default function Verification() {
             setPending(true);
             setError(null);
             await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+            setResent(true);
         } catch (err) {
             setError(getClerkErrorMessage(err, "We couldn't resend the verification code."));
         } finally {
@@ -77,14 +81,7 @@ export default function Verification() {
         <AuthPanel
             title="Verify your email"
             description="Enter the code we sent to finish creating your account and unlock the app."
-            redirect={
-                <>
-                    Need to start again?{" "}
-                    <Link href="/sign-up" className="font-semibold text-sky-300 transition-colors hover:text-sky-200">
-                        Go back to sign up
-                    </Link>
-                </>
-            }
+            redirect={<FooterRedirect text="Need to start again?" href="/sign-up" link="Go back to sign up" />}
         >
             <div className="space-y-6">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -98,6 +95,8 @@ export default function Verification() {
                         </div>
                     </div>
                 </div>
+
+                {!resent ? <p className="text-sm text-emerald-400">A new code has been sent to your inbox.</p> : null}
 
                 <FieldGroup className="gap-4">
                     <Field>
@@ -117,12 +116,23 @@ export default function Verification() {
 
                     {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
-                    <Button type="button" className="h-11 w-full text-sm font-semibold" onClick={verifyEmail} disabled={pending || !isLoaded || !code}>
+                    <Button
+                        type="button"
+                        className="h-11 w-full text-sm font-semibold"
+                        onClick={verifyEmail}
+                        disabled={pending || !isLoaded || !code}
+                    >
                         {pending ? "Verifying..." : "Verify email"}
                         <ArrowRight className="size-4" />
                     </Button>
 
-                    <Button type="button" variant="ghost" className="w-full text-sm text-zinc-400 hover:text-white" onClick={resendCode} disabled={pending || !isLoaded}>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full text-sm text-zinc-400 hover:text-white"
+                        onClick={resendCode}
+                        disabled={pending || !isLoaded}
+                    >
                         Resend code
                     </Button>
                 </FieldGroup>

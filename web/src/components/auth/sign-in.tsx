@@ -52,7 +52,9 @@ export default function SignInForm() {
             }
 
             if (result.status === "needs_second_factor") {
-                setError("This account needs an additional authentication factor. Finish that factor in Clerk to continue.");
+                setError(
+                    "Multi-factor authentication is required for this account, but it isn't supported yet. Please contact support or try a different sign-in method.",
+                );
                 return;
             }
 
@@ -68,7 +70,7 @@ export default function SignInForm() {
         <form onSubmit={handleSubmit} className="w-full">
             <FieldGroup className="gap-4">
                 <Field>
-                    <Label htmlFor="email" className="text-sm font-semibold text-zinc-200">
+                    <Label htmlFor="email" className="font-semibold text-zinc-200">
                         Email
                     </Label>
                     <Input
@@ -77,13 +79,13 @@ export default function SignInForm() {
                         name="email"
                         placeholder="name@example.com"
                         autoComplete="email"
-                        className="h-11 border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
+                        className="border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
                     />
                 </Field>
 
                 <Field>
                     <div className="flex items-center justify-between gap-3">
-                        <Label htmlFor="password" className="text-sm font-semibold text-zinc-200">
+                        <Label htmlFor="password" className="font-semibold text-zinc-200">
                             Password
                         </Label>
                         <Link href="/forgot-password" className="text-xs font-medium text-sky-300 transition-colors hover:text-sky-200">
@@ -97,12 +99,13 @@ export default function SignInForm() {
                             name="password"
                             placeholder="Enter your password"
                             autoComplete="current-password"
-                            className="h-11 border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
+                            className="border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
                         />
                         <Button
                             type="button"
-                            onClick={() => setPasswordVisible((curr) => !curr)}
                             size={"icon"}
+                            onClick={() => setPasswordVisible((curr) => !curr)}
+                            aria-label={passwordVisible ? "Hide password" : "Show password"}
                             className="absolute top-1/2 right-2 -translate-y-1/2 bg-transparent hover:bg-transparent"
                         >
                             {passwordVisible ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -110,9 +113,9 @@ export default function SignInForm() {
                     </div>
                 </Field>
 
-                {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+                {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
-                <Button type="submit" className="h-11 w-full text-sm font-semibold" disabled={pending || !isLoaded}>
+                <Button className="h-10 w-full text-sm font-semibold" disabled={pending || !isLoaded}>
                     {pending ? "Signing in..." : "Sign in"}
                     <ArrowRight className="size-4" />
                 </Button>

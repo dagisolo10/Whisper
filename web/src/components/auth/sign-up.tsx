@@ -68,7 +68,7 @@ export default function SignUpForm() {
             <FieldGroup className="gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Field>
-                        <Label htmlFor="firstName" className="text-sm font-semibold text-zinc-200">
+                        <Label htmlFor="firstName" className="font-semibold text-zinc-200">
                             First name
                         </Label>
                         <Input
@@ -77,12 +77,12 @@ export default function SignUpForm() {
                             name="firstName"
                             placeholder="Jane"
                             autoComplete="given-name"
-                            className="h-11 border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
+                            className="border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
                         />
                     </Field>
 
                     <Field>
-                        <Label htmlFor="lastName" className="text-sm font-semibold text-zinc-200">
+                        <Label htmlFor="lastName" className="font-semibold text-zinc-200">
                             Last name
                         </Label>
                         <Input
@@ -91,13 +91,13 @@ export default function SignUpForm() {
                             name="lastName"
                             placeholder="Doe"
                             autoComplete="family-name"
-                            className="h-11 border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
+                            className="border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
                         />
                     </Field>
                 </div>
 
                 <Field>
-                    <Label htmlFor="email" className="text-sm font-semibold text-zinc-200">
+                    <Label htmlFor="email" className="font-semibold text-zinc-200">
                         Email
                     </Label>
                     <Input
@@ -106,12 +106,12 @@ export default function SignUpForm() {
                         name="email"
                         placeholder="name@example.com"
                         autoComplete="email"
-                        className="h-11 border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
+                        className="border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
                     />
                 </Field>
 
                 <Field>
-                    <Label htmlFor="password" className="text-sm font-semibold text-zinc-200">
+                    <Label htmlFor="password" className="font-semibold text-zinc-200">
                         Password
                     </Label>
                     <div className="relative">
@@ -121,12 +121,13 @@ export default function SignUpForm() {
                             name="password"
                             placeholder="At least 8 characters"
                             autoComplete="new-password"
-                            className="h-11 border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
+                            className="border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-500"
                         />
                         <Button
                             type="button"
-                            onClick={() => setPasswordVisible((curr) => !curr)}
                             size={"icon"}
+                            onClick={() => setPasswordVisible((curr) => !curr)}
+                            aria-label={passwordVisible ? "Hide password" : "Show password"}
                             className="absolute top-1/2 right-2 -translate-y-1/2 bg-transparent hover:bg-transparent"
                         >
                             {passwordVisible ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -134,9 +135,9 @@ export default function SignUpForm() {
                     </div>
                 </Field>
 
-                {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+                {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
-                <Button type="submit" className="h-11 w-full text-sm font-semibold" disabled={pending || !isLoaded}>
+                <Button className="h-10 w-full text-sm font-semibold" disabled={pending || !isLoaded}>
                     {pending ? "Creating account..." : "Create account"}
                     <ArrowRight className="size-4" />
                 </Button>

@@ -27,12 +27,19 @@ export default function NoOpenChat({ onClick }: { onClick: () => void }) {
 
                 <div>
                     <h2 className="font-jakarta text-foreground text-3xl font-semibold tracking-tight">Whisper for desktop</h2>
-                    <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-6">Select a conversation on the left to start messaging, or jump in with a quick action below.</p>
+                    <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-6">
+                        Select a conversation on the left to start messaging, or jump in with a quick action below.
+                    </p>
                 </div>
 
                 <div className="flex w-full max-w-3xl justify-center gap-8">
                     {quickActions.map(({ label, icon: Icon }) => (
-                        <Button key={label} variant={"ghost"} className="border-border size-48 h-auto flex-col gap-4 rounded-[1.75rem] border p-6 hover:-translate-y-0.5" onClick={onClick}>
+                        <Button
+                            key={label}
+                            variant={"ghost"}
+                            className="border-border h-auto w-48 flex-col gap-4 rounded-[1.75rem] border p-6 hover:-translate-y-0.5"
+                            onClick={onClick}
+                        >
                             <div className="bg-primary/12 text-primary flex size-12 items-center justify-center rounded-2xl">
                                 <Icon className="size-5" />
                             </div>
