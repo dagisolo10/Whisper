@@ -19,7 +19,7 @@ export interface BaseProp {
 export default function ForgotPasswordForm() {
     const router = useRouter();
     const { signIn } = useSignIn();
-    const { loaded: isLoaded, setActive } = useClerk();
+    const { loaded: isLoaded } = useClerk();
 
     const [code, setCode] = useState("");
     const [email, setEmail] = useState("");
@@ -87,9 +87,16 @@ export default function ForgotPasswordForm() {
             }
 
             if (signIn.status === "complete") {
-                await setActive({
-                    session: signIn.createdSessionId,
-                    navigate: () => router.replace("/"),
+                await signIn.finalize({
+                    navigate: async ({ session, decorateUrl }) => {
+                        if (session?.currentTask) return;
+                        const url = decorateUrl("/");
+                        if (url.startsWith("http")) {
+                            window.location.href = url;
+                        } else {
+                            router.push(url);
+                        }
+                    },
                 });
                 return;
             }
@@ -132,9 +139,10 @@ export default function ForgotPasswordForm() {
 
             if (advance) setStep("code");
         } catch (err) {
-            setError(getClerkErrorMessage(err, "We couldn't resend the reset code."));
+            setError(getClerkErrorMessage(err, "We couldn't send a reset code to that email."));
         } finally {
             setResending(false);
+            setBusy(false);
         }
     };
 

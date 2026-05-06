@@ -66,6 +66,10 @@ const NAV_STEPS = [
 export default function Side() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
+
+    const mode = searchParams.get("mode");
+    const replacement = `/${mode}`;
+    const mapCheck = pathname === "/verification" && ACTIVE_STEP_MAP[replacement] ? replacement : pathname;
     const content = CONTENT_MAP[pathname as keyof typeof CONTENT_MAP] || CONTENT_MAP["/sign-in"];
 
     return (
@@ -78,10 +82,6 @@ export default function Side() {
 
             <div className="mt-auto grid w-full grid-cols-3 gap-4">
                 {NAV_STEPS.map((step) => {
-                    const mode = searchParams.get("mode");
-                    const replacement = `/${mode}`;
-
-                    const mapCheck = pathname === "/verification" && ACTIVE_STEP_MAP[replacement] ? replacement : pathname;
                     const isActive = ACTIVE_STEP_MAP[mapCheck] === step.id;
                     const Icon = step.icon;
 

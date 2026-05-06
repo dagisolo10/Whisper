@@ -5,17 +5,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useClerk, useSignIn } from "@clerk/nextjs";
-
+import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { getClerkErrorMessage } from "@/lib/clerk-errors";
 import Loader from "@/components/loader";
+import { toast } from "sonner";
+
+const signInSchema = z.object({
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+});
 
 export default function SignInForm() {
     const { signIn } = useSignIn();
-    const { loaded: isLoaded, setActive } = useClerk();
+    const { loaded: isLoaded } = useClerk();
 
     const router = useRouter();
 
@@ -26,13 +32,27 @@ export default function SignInForm() {
     const handleSignIn = async (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (!isLoaded) {
+        if (!isLoaded) return;
+
+        const formData = new FormData(event.currentTarget);
+        const rawData = Object.fromEntries(formData);
+        const result = signInSchema.safeParse(rawData);
+
+        if (!result.success) {
+            const errorMsgs = result.error.errors;
+            toast.error("Validation Error", {
+                description: () => (
+                    <div>
+                        {errorMsgs.map((err, key) => (
+                            <p key={key}>• {err.message}</p>
+                        ))}
+                    </div>
+                ),
+            });
             return;
         }
 
-        const formData = new FormData(event.currentTarget);
-        const email = String(formData.get("email") || "").trim();
-        const password = String(formData.get("password") || "");
+        const { email, password } = result.data;
 
         try {
             setPending(true);
@@ -41,9 +61,16 @@ export default function SignInForm() {
             await signIn.password({ emailAddress: email, password });
 
             if (signIn.status === "complete") {
-                await setActive({
-                    session: signIn.createdSessionId,
-                    navigate: () => router.replace("/"),
+                await signIn.finalize({
+                    navigate: async ({ session, decorateUrl }) => {
+                        if (session?.currentTask) return;
+                        const url = decorateUrl("/");
+                        if (url.startsWith("http")) {
+                            window.location.href = url;
+                        } else {
+                            router.push(url);
+                        }
+                    },
                 });
                 return;
             }

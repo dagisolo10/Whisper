@@ -17,7 +17,7 @@ import FooterRedirect from "@/components/auth/ui/footer-redirect";
 export default function Page() {
     const { isSignedIn } = useAuth();
     const { signUp } = useSignUp();
-    const { loaded: isLoaded, handleRedirectCallback, setActive } = useClerk();
+    const { loaded: isLoaded, handleRedirectCallback } = useClerk();
 
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -100,9 +100,16 @@ export default function Page() {
             await signUp.update({ firstName: firstName.trim(), lastName: lastName.trim() });
 
             if (signUp.status === "complete") {
-                await setActive({
-                    session: signUp.createdSessionId,
-                    navigate: async () => router.replace("/"),
+                await signUp.finalize({
+                    navigate: async ({ session, decorateUrl }) => {
+                        if (session?.currentTask) return;
+                        const url = decorateUrl("/");
+                        if (url.startsWith("http")) {
+                            window.location.href = url;
+                        } else {
+                            router.push(url);
+                        }
+                    },
                 });
                 return;
             }

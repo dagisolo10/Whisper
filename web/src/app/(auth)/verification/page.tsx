@@ -19,7 +19,7 @@ export default function Verification() {
     const { signUp } = useSignUp();
     const { signIn } = useSignIn();
     const { isSignedIn } = useAuth();
-    const { loaded: clerkLoaded, setActive } = useClerk();
+    const { loaded: clerkLoaded } = useClerk();
 
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -39,15 +39,23 @@ export default function Verification() {
         if (!clerkLoaded) return;
         setVerifying(true);
         setError(null);
+        setResent(false);
 
         try {
             if (mode === "sign-up" && signUp) {
                 await signUp.verifications.verifyEmailCode({ code });
 
                 if (signUp.status === "complete") {
-                    await setActive({
-                        session: signUp.createdSessionId,
-                        navigate: () => router.replace("/"),
+                    await signUp.finalize({
+                        navigate: async ({ session, decorateUrl }) => {
+                            if (session?.currentTask) return;
+                            const url = decorateUrl("/");
+                            if (url.startsWith("http")) {
+                                window.location.href = url;
+                            } else {
+                                router.push(url);
+                            }
+                        },
                     });
                     return;
                 }
@@ -55,9 +63,16 @@ export default function Verification() {
                 await signIn.mfa.verifyEmailCode({ code });
 
                 if (signIn.status === "complete") {
-                    await setActive({
-                        session: signIn.createdSessionId,
-                        navigate: () => router.replace("/"),
+                    await signIn.finalize({
+                        navigate: async ({ session, decorateUrl }) => {
+                            if (session?.currentTask) return;
+                            const url = decorateUrl("/");
+                            if (url.startsWith("http")) {
+                                window.location.href = url;
+                            } else {
+                                router.push(url);
+                            }
+                        },
                     });
                     return;
                 }
@@ -77,10 +92,19 @@ export default function Verification() {
         setError(null);
 
         try {
+            let didResend = false;
+
             if (mode === "sign-up" && signUp) {
                 await signUp.verifications.sendEmailCode();
+                didResend = true;
             } else if ((mode === "sign-in" || mode === "forgot-password") && signIn) {
                 await signIn.mfa.sendEmailCode();
+                didResend = true;
+            }
+
+            if (!didResend) {
+                setError("Invalid verification mode. Please restart the flow.");
+                return;
             }
 
             setResent(true);
@@ -100,7 +124,13 @@ export default function Verification() {
     return (
         <AuthPanel
             title="Verify your identity"
-            description={mode === "sign-up" ? "Enter the code we sent to create your account." : "Enter the verification code to sign in."}
+            description={
+                mode === "sign-up"
+                    ? "Enter the code we sent to create your account."
+                    : mode === "forgot-password"
+                      ? "Enter the verification code to continue resetting your password."
+                      : "Enter the verification code to sign in."
+            }
             redirect={<FooterRedirect text="Need to start again?" href={getBackHref()} link="Go back" />}
         >
             <div className="space-y-6">
