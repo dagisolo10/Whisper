@@ -6,13 +6,14 @@ import { ArrowRight, Mail, Star } from "lucide-react";
 import { useAuth, useClerk, useSignIn } from "@clerk/nextjs";
 import { useSignUp } from "@clerk/nextjs";
 
-import AuthPanel from "@/components/auth/auth-panel";
+import AuthPanel from "@/components/auth/ui/auth-panel";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getClerkErrorMessage } from "@/lib/clerk-errors";
-import FooterRedirect from "@/components/auth/footer-redirect";
+import FooterRedirect from "@/components/auth/ui/footer-redirect";
+import Loader from "@/components/loader";
 
 export default function Verification() {
     const { signUp } = useSignUp();
@@ -26,7 +27,8 @@ export default function Verification() {
 
     const [code, setCode] = useState("");
     const [resent, setResent] = useState(false);
-    const [pending, setPending] = useState(false);
+    const [verifying, setVerifying] = useState(false);
+    const [resending, setResending] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -35,7 +37,7 @@ export default function Verification() {
 
     const handleVerify = async () => {
         if (!clerkLoaded) return;
-        setPending(true);
+        setVerifying(true);
         setError(null);
 
         try {
@@ -50,7 +52,7 @@ export default function Verification() {
                     return;
                 }
             } else if (mode === "sign-in" && signIn) {
-                await signIn.mfa.verifyBackupCode({ code });
+                await signIn.mfa.verifyEmailCode({ code });
 
                 if (signIn.status === "complete") {
                     await setActive({
@@ -65,13 +67,13 @@ export default function Verification() {
         } catch (err) {
             setError(getClerkErrorMessage(err, "Verification failed. Please check the code."));
         } finally {
-            setPending(false);
+            setVerifying(false);
         }
     };
 
     const resendCode = async () => {
         if (!clerkLoaded) return;
-        setPending(true);
+        setResending(true);
         setError(null);
 
         try {
@@ -85,7 +87,7 @@ export default function Verification() {
         } catch (err) {
             setError(getClerkErrorMessage(err, "We couldn't resend the verification code."));
         } finally {
-            setPending(false);
+            setResending(false);
         }
     };
 
@@ -110,7 +112,7 @@ export default function Verification() {
                     </div>
                 </div>
 
-                {!resent && (
+                {resent && (
                     <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-4 py-3">
                         <Star className="size-4 fill-emerald-500 text-emerald-500" />
                         <p className="text-sm text-emerald-400">A new code has been sent to your inbox.</p>
@@ -134,8 +136,9 @@ export default function Verification() {
 
                     {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
-                    <Button type="button" className="h-11 w-full text-sm font-semibold" onClick={handleVerify} disabled={pending || !code}>
-                        {pending ? "Verifying..." : "Verify"}
+                    <Button type="button" className="h-11 w-full text-sm font-semibold" onClick={handleVerify} disabled={verifying || !code}>
+                        <Loader loading={verifying} />
+                        <p>{verifying ? "Verifying..." : "Verify"}</p>
                         <ArrowRight className="size-4" />
                     </Button>
 
@@ -144,9 +147,10 @@ export default function Verification() {
                         variant="ghost"
                         className="w-full text-sm text-zinc-400 hover:text-white"
                         onClick={resendCode}
-                        disabled={pending}
+                        disabled={resending}
                     >
-                        Resend code
+                        <Loader loading={resending} />
+                        <p>Resend code</p>
                     </Button>
                 </FieldGroup>
             </div>

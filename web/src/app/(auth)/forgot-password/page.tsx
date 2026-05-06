@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-
-import AuthPanel from "@/components/auth/auth-panel";
-import ForgotPasswordForm from "@/components/auth/forgot-password";
+import AuthPanel from "@/components/auth/ui/auth-panel";
+import ForgotPasswordForm from "@/components/auth/form/forgot-password";
 
 export default function ForgotPasswordPage() {
     return (

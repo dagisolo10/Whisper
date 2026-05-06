@@ -68,8 +68,6 @@ export default function Side() {
     const searchParams = useSearchParams();
     const content = CONTENT_MAP[pathname as keyof typeof CONTENT_MAP] || CONTENT_MAP["/sign-in"];
 
-    // bg-[radial-gradient(circle_at_top_left,rgba(86,131,255,0.2),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_30%),linear-gradient(160deg,#12131a_0%,#161922_48%,#0e1016_100%)]
-
     return (
         <aside className="relative hidden flex-col gap-8 rounded-4xl border p-8 lg:flex">
             <div className="absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-white/35 to-transparent" />

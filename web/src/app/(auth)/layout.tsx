@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
-import Side from "@/components/auth/side";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
+import Side from "@/components/auth/ui/side";
 
 export default async function AuthLayout({ children }: { children: ReactNode }) {
     const { userId } = await auth();

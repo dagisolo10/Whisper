@@ -6,13 +6,13 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { useAuth, useClerk } from "@clerk/nextjs";
 import { useSignUp } from "@clerk/nextjs";
 
-import AuthPanel from "@/components/auth/auth-panel";
+import AuthPanel from "@/components/auth/ui/auth-panel";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getClerkErrorMessage } from "@/lib/clerk-errors";
-import FooterRedirect from "@/components/auth/footer-redirect";
+import FooterRedirect from "@/components/auth/ui/footer-redirect";
 
 export default function Page() {
     const { isSignedIn } = useAuth();

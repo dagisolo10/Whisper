@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { getClerkErrorMessage } from "@/lib/clerk-errors";
+import Loader from "@/components/loader";
 
 export default function SignUpForm() {
     const { signUp } = useSignUp();
@@ -52,8 +53,7 @@ export default function SignUpForm() {
                 return;
             }
 
-            await signUp.verifications.sendEmailCode();
-            router.push("/verification?mode=sign-up");
+            setError(`Sign-up isn't complete yet (status: ${signUp.status ?? "unknown"}). Please try again.`);
         } catch (err) {
             setError(getClerkErrorMessage(err, "Unable to create your account."));
         } finally {
@@ -138,6 +138,7 @@ export default function SignUpForm() {
                 {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
                 <Button className="h-10 w-full text-sm font-semibold" disabled={pending || !isLoaded}>
+                    <Loader loading={pending} />
                     {pending ? "Creating account..." : "Create account"}
                     <ArrowRight className="size-4" />
                 </Button>

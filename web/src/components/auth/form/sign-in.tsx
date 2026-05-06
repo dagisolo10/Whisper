@@ -11,11 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { getClerkErrorMessage } from "@/lib/clerk-errors";
+import Loader from "@/components/loader";
 
 export default function SignInForm() {
     const { signIn } = useSignIn();
     const { loaded: isLoaded, setActive } = useClerk();
-    // const { isLoaded, signIn, setActive } = useSignIn();
 
     const router = useRouter();
 
@@ -54,7 +54,7 @@ export default function SignInForm() {
                 return;
             }
 
-            setError(`This sign-in attempt is not finished yet. Please try again or use Google sign-in. ${signIn}`);
+            setError(`This sign-in attempt is not finished yet (status: ${signIn.status ?? "unknown"}). Please try again or use Google sign-in.`);
         } catch (err) {
             setError(getClerkErrorMessage(err, "Unable to sign in with email and password."));
         } finally {
@@ -114,7 +114,8 @@ export default function SignInForm() {
                 {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
                 <Button className="h-10 w-full text-sm font-semibold" disabled={pending || !isLoaded}>
-                    {pending ? "Signing in..." : "Sign in"}
+                    <Loader loading={pending} />
+                    <p>{pending ? "Signing in..." : "Sign in"}</p>
                     <ArrowRight className="size-4" />
                 </Button>
             </FieldGroup>

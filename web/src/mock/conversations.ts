@@ -1,4 +1,13 @@
-export const conversations = [
+export interface Conversation {
+    name: string;
+    preview: string;
+    time: string;
+    avatar: string;
+    color: string;
+    verified?: boolean;
+}
+
+export const conversations: Conversation[] = [
     {
         name: "Amy",
         preview: "Can you review the PR by tonight?",

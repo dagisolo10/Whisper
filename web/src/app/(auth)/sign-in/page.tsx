@@ -1,7 +1,7 @@
-import SignInForm from "@/components/auth/sign-in";
-import AuthPanel from "@/components/auth/auth-panel";
-import GoogleButton from "@/components/auth/google-button";
-import FooterRedirect from "@/components/auth/footer-redirect";
+import AuthPanel from "@/components/auth/ui/auth-panel";
+import SignInForm from "@/components/auth/form/sign-in";
+import GoogleButton from "@/components/auth/ui/google-button";
+import FooterRedirect from "@/components/auth/ui/footer-redirect";
 
 export default function SignIn() {
     return (
