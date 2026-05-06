@@ -1,0 +1,158 @@
+export interface Conversation {
+    name: string;
+    preview: string;
+    time: string;
+    avatar: string;
+    color: string;
+    verified?: boolean;
+}
+
+export const conversations: Conversation[] = [
+    {
+        name: "Amy",
+        preview: "Can you review the PR by tonight?",
+        time: "1m",
+        avatar: "AM",
+        color: "from-teal-400 to-emerald-600",
+        verified: true,
+    },
+    {
+        name: "Crypto Alerts",
+        preview: "BitCoin is up 12% in the last hour! 🚀",
+        time: "5m",
+        avatar: "CA",
+        color: "from-orange-400 to-yellow-500",
+    },
+    {
+        name: "Samuel Pierce",
+        preview: "Let's grab macchiato after class.",
+        time: "14m",
+        avatar: "SA",
+        color: "from-amber-700 to-orange-900",
+    },
+    {
+        name: "Design System",
+        preview: "Updated the primary button radius to 12px.",
+        time: "28m",
+        avatar: "DS",
+        color: "from-indigo-500 to-purple-500",
+        verified: true,
+    },
+    {
+        name: "Johnny",
+        preview: "Did the professor upload the worksheet?",
+        time: "1h",
+        avatar: "J",
+        color: "from-blue-500 to-cyan-400",
+    },
+    {
+        name: "Benjamin",
+        preview: "The API is throwing a 500 error again.",
+        time: "2h",
+        avatar: "B",
+        color: "from-red-500 to-rose-600",
+    },
+    {
+        name: "Next.js Masters",
+        preview: "Lee Robinson just posted a new tutorial.",
+        time: "3h",
+        avatar: "NM",
+        color: "from-neutral-800 to-zinc-950",
+        verified: true,
+    },
+    {
+        name: "Hanna",
+        preview: "I'll send the feedback over Slack.",
+        time: "5h",
+        avatar: "H",
+        color: "from-pink-400 to-rose-500",
+    },
+    {
+        name: "Web3 Ethiopia",
+        preview: "Who's coming to the hackathon next month?",
+        time: "6h",
+        avatar: "W3",
+        color: "from-violet-600 to-fuchsia-700",
+        verified: true,
+    },
+    {
+        name: "Figma Community",
+        preview: "Someone commented on your 'Whisper UI' file.",
+        time: "8h",
+        avatar: "FC",
+        color: "from-blue-400 to-indigo-600",
+    },
+    {
+        name: "Dad",
+        preview: "Call me when you're free.",
+        time: "10h",
+        avatar: "D",
+        color: "from-slate-600 to-slate-800",
+    },
+    {
+        name: "Vercel",
+        preview: "Your deployment was successful.",
+        time: "12h",
+        avatar: "V",
+        color: "from-zinc-900 to-black",
+        verified: true,
+    },
+    {
+        name: "Sara Tech",
+        preview: "Sent a voice message (0:45)",
+        time: "Yesterday",
+        avatar: "ST",
+        color: "from-cyan-500 to-blue-500",
+    },
+    {
+        name: "Gym OS Group",
+        preview: "New workout log: Upper Body Power",
+        time: "Yesterday",
+        avatar: "GO",
+        color: "from-lime-500 to-green-600",
+    },
+    {
+        name: "Jason",
+        preview: "The login flow feels much smoother now.",
+        time: "Tue",
+        avatar: "J",
+        color: "from-orange-300 to-red-400",
+    },
+    {
+        name: "Prisma Support",
+        preview: "Your ticket #492 has been resolved.",
+        time: "Tue",
+        avatar: "PS",
+        color: "from-sky-600 to-indigo-800",
+        verified: true,
+    },
+    {
+        name: "Elias",
+        preview: "Sent you a link: tailwind ui.com/templates",
+        time: "Mon",
+        avatar: "E",
+        color: "from-teal-500 to-cyan-600",
+    },
+    {
+        name: "Freelance Client",
+        preview: "Payment for Milestone 2 has been released.",
+        time: "Sun",
+        avatar: "FC",
+        color: "from-emerald-400 to-green-500",
+    },
+    {
+        name: "Abel Coding",
+        preview: "Check out this Go-lang library for APIs.",
+        time: "Sat",
+        avatar: "AC",
+        color: "from-blue-400 to-sky-500",
+    },
+    {
+        name: "Whisper Announcements",
+        preview: "Welcome to Version 2.0! See what's new.",
+        time: "Oct 25",
+        avatar: "W",
+        color: "from-violet-500 to-purple-700",
+        verified: true,
+    },
+];
