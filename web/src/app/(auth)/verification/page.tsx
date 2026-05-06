@@ -96,10 +96,10 @@ export default function Verification() {
             redirect={<FooterRedirect text="Need to start again?" href={mode === "sign-up" ? "/sign-up" : "/sign-in"} link="Go back" />}
         >
             <div className="space-y-6">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-11 items-center justify-center rounded-full bg-sky-400/15 text-sky-300">
-                            <Mail className="size-5" />
+                        <div className="flex size-10 items-center justify-center rounded-full bg-sky-400/15 text-sky-300">
+                            <Mail className="size-4" />
                         </div>
                         <div className="text-left">
                             <p className="text-sm font-semibold text-white">Verification code sent</p>
