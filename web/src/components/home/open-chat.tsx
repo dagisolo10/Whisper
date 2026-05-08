@@ -31,7 +31,7 @@ type PendingImage = {
 };
 
 export default function OpenChatPanel() {
-    const { user } = useUser();
+    const { user, lastToken } = useUser();
     const { activeRoom } = useRoom();
     const { messages, sendMessage } = useMessage();
 
@@ -145,7 +145,7 @@ export default function OpenChatPanel() {
                 if (trimmedMessage) {
                     formData.append("textContent", trimmedMessage);
                 }
-                await sendMessage(formData, "token");
+                await sendMessage(formData, lastToken ?? "");
                 clearPendingImages();
                 sent = true;
             } else {
@@ -154,7 +154,7 @@ export default function OpenChatPanel() {
                     messageType: "Text",
                     roomId: activeRoom.id,
                 };
-                await sendMessage(payload, "token");
+                await sendMessage(payload, lastToken ?? "");
                 sent = true;
             }
         } catch (error) {
