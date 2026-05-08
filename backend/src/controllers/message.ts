@@ -7,7 +7,7 @@ import { Server as SocketServer } from "socket.io";
 import { MessageType, Prisma, type Room } from "@prisma/client";
 import type { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-events.js";
 
-const cleanupFiles = async (files: any[]) => {
+const cleanupFiles = async (files: Express.Multer.File[]) => {
     await Promise.all(files.map((file) => fs.unlink(file.path).catch(() => {})));
 };
 
@@ -166,11 +166,11 @@ export async function editMessage(req: Request, res: Response) {
         });
 
         if (!existingMessage) throw new HttpError(404, "Message not found");
-        if (existingMessage.senderId !== senderId) throw new HttpError(400, "You can only edit your own messages");
+        if (existingMessage.senderId !== senderId) throw new HttpError(403, "You can only edit your own messages");
         if (existingMessage.messageType !== "Text") throw new HttpError(400, "Only text messages can be edited");
 
         const isMember = existingMessage.room.members.some((m) => m.userId === senderId);
-        if (!isMember) throw new HttpError(400, "Not a member of this room");
+        if (!isMember) throw new HttpError(403, "Not a member of this room");
 
         const updatedMessage = await prisma.message.update({
             where: {

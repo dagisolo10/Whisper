@@ -11,7 +11,9 @@ export function sanitizeUsername(value: string): string {
         .replace(/^[._]+|[._]+$/g, "");
 }
 
-const imageUrlSchema = z.string().trim().min(1, "Image URL cannot be empty");
+const MAX_AVATAR_URLS = 10;
+const MAX_AVATAR_URL_LENGTH = 2048;
+const imageUrlSchema = z.string().trim().min(1, "Image URL cannot be empty").max(MAX_AVATAR_URL_LENGTH, "Image URL is too long");
 
 function normalizeImageUrls(values?: string[] | null) {
     if (!values) return [];
@@ -34,7 +36,7 @@ export const createUserPayloadSchema = z.object({
         .nullable()
         .transform((avatarUrl) => (avatarUrl && avatarUrl.length > 0 ? avatarUrl : null))
         .optional(),
-    avatarUrls: z.array(imageUrlSchema).transform(normalizeImageUrls).optional(),
+    avatarUrls: z.array(imageUrlSchema).max(MAX_AVATAR_URLS, `At most ${MAX_AVATAR_URLS} avatars allowed`).transform(normalizeImageUrls).optional(),
 });
 
 export const updateUserPayloadSchema = z.object({
@@ -52,7 +54,7 @@ export const updateUserPayloadSchema = z.object({
         .nullable()
         .transform((avatarUrl) => (avatarUrl && avatarUrl.length > 0 ? avatarUrl : null))
         .optional(),
-    avatarUrls: z.array(imageUrlSchema).transform(normalizeImageUrls).optional(),
+    avatarUrls: z.array(imageUrlSchema).max(MAX_AVATAR_URLS, `At most ${MAX_AVATAR_URLS} avatars allowed`).transform(normalizeImageUrls).optional(),
 });
 
 export type CreateUserPayload = z.infer<typeof createUserPayloadSchema>;

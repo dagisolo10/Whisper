@@ -90,14 +90,17 @@ export async function updateUser(req: Request, res: Response) {
         if (username !== undefined) updateData.username = username;
 
         if (mainAvatarUrl !== undefined || avatarUrls !== undefined) {
-            const normalizedAvatars = normalizeAvatarFields(mainAvatarUrl, avatarUrls);
-            if (mainAvatarUrl !== undefined) {
-                updateData.mainAvatarUrl = normalizedAvatars.mainAvatarUrl;
-            }
+            const existing = await prisma.user.findUnique({
+                where: { id },
+                select: { mainAvatarUrl: true, avatarUrls: true },
+            });
+            if (!existing) throw new HttpError(404, "User not found");
 
-            if (avatarUrls !== undefined) {
-                updateData.avatarUrls = normalizedAvatars.avatarUrls;
-            }
+            const nextMain = mainAvatarUrl !== undefined ? mainAvatarUrl : existing.mainAvatarUrl;
+            const nextList = avatarUrls !== undefined ? avatarUrls : existing.avatarUrls;
+            const normalizedAvatars = normalizeAvatarFields(nextMain, nextList);
+            updateData.mainAvatarUrl = normalizedAvatars.mainAvatarUrl;
+            updateData.avatarUrls = normalizedAvatars.avatarUrls;
         }
 
         if (Object.keys(updateData).length === 0) throw new HttpError(400, "No fields provided for update");
