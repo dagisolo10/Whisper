@@ -58,7 +58,7 @@ const useSocket = create<SocketStore>((set, get) => ({
         });
 
         socket.off("newMessage");
-        socket.on("newMessage", (message, roomId) => {
+        socket.on("newMessage", async (message, roomId) => {
             const user = useAuthStore.getState().user;
             const activeRoomId = useRoom.getState().activeRoomId;
             const currentMessages = useMessage.getState().messages;
@@ -70,6 +70,35 @@ const useSocket = create<SocketStore>((set, get) => ({
                 useMessage.getState().addMessage(message);
                 if (message.senderId !== user?.id) socket.emit("markAsRead", roomId);
             }
+
+            if (message.roomId !== activeRoomId && message.senderId !== user?.id) {
+                const permission = await Notification.requestPermission();
+
+                if (permission === "granted") {
+                    const senderName = message.user.name ?? "Someone";
+
+                    let notificationBody = "";
+                    if (message.messageType === "Text") {
+                        notificationBody = message.textContent || "Sent a message";
+                    } else if (message.messageType === "Image") {
+                        const imgCount = message.imageUrls?.length || 0;
+                        notificationBody = imgCount > 1 ? `📷 Sent ${imgCount} images` : "📷 Sent an image";
+                    }
+
+                    const notification = new Notification(`New message from ${senderName}`, {
+                        silent: false,
+                        tag: message.roomId,
+                        body: notificationBody,
+                        requireInteraction: true,
+                        icon: message.user?.mainAvatarUrl || "/images/coder.jpg",
+                    });
+
+                    notification.onclick = () => {
+                        window.focus();
+                    };
+                }
+            }
+
             useRoom.getState().updateRoomPreview(message);
         });
 
