@@ -12,10 +12,10 @@ export default function showNotification(message: Message) {
     }
 
     const notification = new Notification(`New message from ${senderName}`, {
+        silent: false,
+        tag: message.roomId,
         body: notificationBody,
         icon: message.user?.mainAvatarUrl || "/images/coder.jpg",
-        tag: message.roomId,
-        silent: false,
     });
 
     notification.onclick = () => {

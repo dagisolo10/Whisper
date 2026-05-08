@@ -58,7 +58,7 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
             </div>
         );
 
-    if (noAuth ? !user : isSignedIn && !user) return <div className="flex h-screen items-center justify-center">Error loading profile...</div>;
+    // if (noAuth ? !user : isSignedIn && !user) return <div className="flex h-screen items-center justify-center">Error loading profile...</div>;
 
     return children;
 }
