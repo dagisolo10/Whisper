@@ -1,11 +1,9 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { EditIcon, Lock, MessageCircleMore, Zap } from "lucide-react";
 
 const quickActions = [{ label: "New chat", icon: EditIcon }];
 
-export default function NoOpenChat({ onClick }: { onClick: () => void }) {
+export default function NoOpenChat() {
     return (
         <section className="relative hidden overflow-hidden xl:flex">
             <div className="from-primary/18 absolute top-20 left-1/2 size-64 -translate-x-1/2 rounded-full bg-radial from-0% to-transparent to-70% blur-2xl" />
@@ -13,7 +11,7 @@ export default function NoOpenChat({ onClick }: { onClick: () => void }) {
 
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-8 p-8 text-center">
                 <div className="absolute top-6 right-6">
-                    <Button variant="outline" className="rounded-full" onClick={onClick}>
+                    <Button variant="outline" className="rounded-full">
                         <MessageCircleMore className="size-4" />
                         Preview chat
                     </Button>
@@ -38,7 +36,6 @@ export default function NoOpenChat({ onClick }: { onClick: () => void }) {
                             key={label}
                             variant={"ghost"}
                             className="border-border h-auto w-48 flex-col gap-4 rounded-[1.75rem] border p-6 hover:-translate-y-0.5"
-                            onClick={onClick}
                         >
                             <div className="bg-primary/12 text-primary flex size-12 items-center justify-center rounded-2xl">
                                 <Icon className="size-5" />

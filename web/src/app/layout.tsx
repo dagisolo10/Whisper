@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { CSSProperties, ReactNode } from "react";
+import AuthWrapper from "@/components/auth/auth-wrapper";
 
 export const metadata: Metadata = {
     title: "Whisper",
@@ -19,8 +20,12 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     return (
         <html lang="en" className="h-full antialiased" style={fontVars}>
             <body className="dark flex min-h-full flex-col">
-                <ClerkProvider>{children}</ClerkProvider>
-                <Toaster position="top-center" />
+                <ClerkProvider>
+                    <AuthWrapper>
+                        {children}
+                        <Toaster position="top-center" />
+                    </AuthWrapper>
+                </ClerkProvider>
             </body>
         </html>
     );

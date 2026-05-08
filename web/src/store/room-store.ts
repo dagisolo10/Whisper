@@ -5,10 +5,11 @@ import api from "@/lib/axios";
 import { create } from "zustand";
 import { Room } from "@/types/model";
 import { RoomPayload } from "@/types/payloads";
-import { RoomResponse, RoomsResponse } from "@/types/response";
+import { ConversationRoomResponse, CreateRoomResponse, RoomsResponse } from "@/types/response";
 
 interface RoomStore {
     rooms: Room[];
+    activeRoom: Room | null;
     currentRoomId: string | null;
 
     createRoom: (token: string, payload: RoomPayload) => Promise<void>;
@@ -19,6 +20,7 @@ interface RoomStore {
 
 const useRoom = create<RoomStore>((set) => ({
     rooms: [],
+    activeRoom: null,
     currentRoomId: null,
 
     getRooms: async (token) => {
@@ -27,21 +29,23 @@ const useRoom = create<RoomStore>((set) => ({
             const res = await api.get<RoomsResponse>("/room/list", auth);
             const data = res.data;
             if (!data.success) throw new Error(res.data.error);
+            const filteredData: Room[] = data.data.map((data) => ({ ...data, messages: [] }));
 
-            set({ rooms: res.data.data || [] });
+            set({ rooms: filteredData });
         } catch (err) {
             console.error("Error fetching rooms", err);
         }
     },
 
-    createRoom: async (token, payload) => {
+    createRoom: async (payload, token) => {
         try {
             const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-            const res = await api.post<RoomResponse>("/room/create", payload, auth);
+            const res = await api.post<CreateRoomResponse>("/room/create", payload, auth);
             const data = res.data;
             if (!data.success) throw new Error(res.data.error);
+            const populatedData: Room = { ...data.data, messages: [] };
 
-            set((state) => ({ rooms: [data.data, ...state.rooms] }));
+            set((state) => ({ rooms: [populatedData, ...state.rooms] }));
         } catch (err) {
             console.error("Error while creating room", err);
         }
@@ -51,7 +55,7 @@ const useRoom = create<RoomStore>((set) => ({
         try {
             const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
-            const res = await api.get<RoomResponse>(`/room/${roomId}`, auth);
+            const res = await api.get<ConversationRoomResponse>(`/room/${roomId}`, auth);
             const data = res.data;
             if (!data.success) throw new Error(data.error);
 
@@ -65,7 +69,7 @@ const useRoom = create<RoomStore>((set) => ({
                 socket.emit("joinRoom", roomId);
             }
 
-            set({ currentRoomId: roomId });
+            set({ currentRoomId: roomId, activeRoom: data.data });
             useMessage.getState().setMessages(data.data.messages || []);
         } catch (err) {
             console.error("Error fetching conversation", err);

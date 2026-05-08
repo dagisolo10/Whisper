@@ -3,9 +3,9 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev",
+        "dev": "next dev -p 8081",
         "build": "next build",
-        "start": "next start",
+        "start": "next start -p 8081",
         "lint": "eslint"
     },
     "dependencies": {
@@ -16,6 +16,7 @@
         "axios": "^1.16.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "embla-carousel-react": "^8.6.0",
         "framer-motion": "^12.38.0",
         "lucide-react": "^1.14.0",
         "next": "16.2.4",

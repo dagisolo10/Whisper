@@ -7,15 +7,16 @@ datasource db {
 }
 
 model User {
-    id           String    @id
-    name         String
-    username     String    @unique
-    avatarUrl    String?
-    bio          String?
-    members      Member[]
-    messages     Message[]
-    lastOnlineAt DateTime  @default(now())
-    createdAt    DateTime  @default(now())
+    id            String    @id
+    name          String
+    username      String    @unique
+    mainAvatarUrl String?
+    avatarUrls    String[]  @default([])
+    bio           String?
+    members       Member[]
+    messages      Message[]
+    lastOnlineAt  DateTime  @default(now())
+    createdAt     DateTime  @default(now())
 }
 
 model Member {
@@ -43,7 +44,8 @@ model Room {
 
 model Message {
     id          String      @id @default(uuid())
-    content     String
+    textContent String?
+    imageUrls   String[]    @default([])
     messageType MessageType
     read        Boolean     @default(false)
     senderId    String

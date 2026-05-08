@@ -1,10 +1,24 @@
 import prisma from "@/lib/prisma.js";
-import { getAuth } from "@clerk/express";
 import wrapper from "@/util/action-wrapper";
 import { HttpError } from "@/lib/http-error";
 import type { Request, Response } from "express";
 import { Prisma, type User } from "@prisma/client";
+import { clerkClient, getAuth } from "@clerk/express";
 import { createUserPayloadSchema, updateUserPayloadSchema } from "@/lib/user-validation";
+
+function normalizeAvatarFields(mainAvatarUrl?: string | null, avatarUrls?: string[]) {
+    const uniqueAvatarUrls = Array.from(new Set((avatarUrls ?? []).filter((value) => value.trim().length > 0)));
+    const resolvedMainAvatarUrl = mainAvatarUrl ?? uniqueAvatarUrls[0] ?? null;
+
+    if (!resolvedMainAvatarUrl) {
+        return { mainAvatarUrl: null, avatarUrls: [] as string[] };
+    }
+
+    return {
+        mainAvatarUrl: resolvedMainAvatarUrl,
+        avatarUrls: [resolvedMainAvatarUrl, ...uniqueAvatarUrls.filter((url) => url !== resolvedMainAvatarUrl)],
+    };
+}
 
 export async function createUser(req: Request, res: Response) {
     const result = await wrapper(async () => {
@@ -17,19 +31,21 @@ export async function createUser(req: Request, res: Response) {
             throw new HttpError(400, parsedPayload.error.issues[0]?.message || "Invalid onboarding payload.");
         }
 
-        const { name, username, bio, avatarUrl } = parsedPayload.data;
+        const { name, username, bio, mainAvatarUrl, avatarUrls } = parsedPayload.data;
         const existingUsername = await prisma.user.findUnique({ where: { username } });
 
         if (existingUsername && existingUsername.id !== id) {
             throw new HttpError(400, "Username is already taken by another account.");
         }
 
+        const normalizedAvatars = normalizeAvatarFields(mainAvatarUrl, avatarUrls);
+
         const createData: Prisma.UserCreateInput = {
             id,
             name,
             username,
             ...(bio !== undefined ? { bio } : {}),
-            ...(avatarUrl !== undefined ? { avatarUrl } : {}),
+            ...(mainAvatarUrl !== undefined || avatarUrls !== undefined ? normalizedAvatars : {}),
             lastOnlineAt: new Date(),
         };
 
@@ -57,7 +73,7 @@ export async function updateUser(req: Request, res: Response) {
             throw new HttpError(400, parsedPayload.error.issues.map((iss) => iss.message).join(", ") || "Invalid onboarding payload.");
         }
 
-        const { name, username, bio, avatarUrl } = parsedPayload.data;
+        const { name, username, bio, mainAvatarUrl, avatarUrls } = parsedPayload.data;
 
         let existingUsername: User | null = null;
         if (username) {
@@ -72,7 +88,11 @@ export async function updateUser(req: Request, res: Response) {
         if (bio !== undefined) updateData.bio = bio;
         if (name !== undefined) updateData.name = name;
         if (username !== undefined) updateData.username = username;
-        if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
+        if (mainAvatarUrl !== undefined || avatarUrls !== undefined) {
+            const normalizedAvatars = normalizeAvatarFields(mainAvatarUrl, avatarUrls);
+            updateData.mainAvatarUrl = normalizedAvatars.mainAvatarUrl;
+            updateData.avatarUrls = normalizedAvatars.avatarUrls;
+        }
 
         if (Object.keys(updateData).length === 0) throw new HttpError(400, "No fields provided for update");
         updateData.lastOnlineAt = new Date();
@@ -94,20 +114,48 @@ export async function updateUser(req: Request, res: Response) {
     return result.success ? res.status(200).json(result) : res.status(result.status).json(result);
 }
 
+// export async function getUser(req: Request, res: Response) {
+//     const result = await wrapper(async () => {
+//         const id = req.userId;
+
+//         if (!id) throw new HttpError(401, "Unauthorized. Login First");
+
+//         const user = await prisma.user.findUnique({ where: { id } });
+
+//         if (!user) throw new HttpError(404, "User not found");
+
+//         return user;
+//     }, "getUser");
+
+//     return result.success ? res.status(200).json(result) : res.status(result.status).json(result);
+// }
+
 export async function getUser(req: Request, res: Response) {
     const result = await wrapper(async () => {
         const id = req.userId;
-
         if (!id) throw new HttpError(401, "Unauthorized. Login First");
 
-        const user = await prisma.user.findUnique({ where: { id } });
+        let user = await prisma.user.findUnique({ where: { id } });
 
-        if (!user) throw new HttpError(404, "User not found");
+        if (!user) {
+            const clerkUser = await clerkClient.users.getUser(id);
+
+            user = await prisma.user.create({
+                data: {
+                    id,
+                    lastOnlineAt: new Date(),
+                    mainAvatarUrl: clerkUser.imageUrl,
+                    avatarUrls: clerkUser.imageUrl ? [clerkUser.imageUrl] : [],
+                    username: clerkUser.username || `user_${id.slice(-5)}`,
+                    name: `${clerkUser.firstName} ${clerkUser.lastName}`.trim() || "New User",
+                },
+            });
+        }
 
         return user;
     }, "getUser");
 
-    return result.success ? res.status(200).json(result) : res.status(result.status).json(result);
+    return result.success ? res.status(200).json(result) : res.status(result.status || 500).json(result);
 }
 
 export async function searchUser(req: Request, res: Response) {
@@ -143,7 +191,8 @@ export async function searchUser(req: Request, res: Response) {
                 id: true,
                 name: true,
                 username: true,
-                avatarUrl: true,
+                mainAvatarUrl: true,
+                avatarUrls: true,
                 bio: true,
             },
             take: 50,

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { Bell, Compass, Image as ImageIcon, MessageCircle, PlayCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
+import useUtil from "@/store/util-store";
 
 const sidebarLinks = [
     { label: "Chats", icon: MessageCircle, href: "/" },
@@ -15,18 +16,14 @@ const sidebarLinks = [
     { label: "Notifications", icon: Bell, href: "/notifications" },
 ];
 
-interface SidebarProp {
-    sidebar: boolean;
-    setSidebar: (value: boolean) => void;
-}
-
-export default function Sidebar({ sidebar, setSidebar }: SidebarProp) {
+export default function Sidebar() {
     const { user } = useUser();
     const pathname = usePathname();
+    const { sidebar, toggleSidebar, setSidebar } = useUtil();
 
     return (
         <div
-            onClick={() => setSidebar(false)}
+            onClick={toggleSidebar}
             onKeyDown={(e) => e.key === "Escape" && setSidebar(false)}
             role="presentation"
             className={cn(

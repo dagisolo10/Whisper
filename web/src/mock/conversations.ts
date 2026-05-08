@@ -1,4 +1,5 @@
 export interface Conversation {
+    id: number;
     name: string;
     preview: string;
     time: string;
@@ -7,7 +8,7 @@ export interface Conversation {
     verified?: boolean;
 }
 
-export const conversations: Conversation[] = [
+export const conversationsMissingId: Omit<Conversation, "id">[] = [
     {
         name: "Amy",
         preview: "Can you review the PR by tonight?",
@@ -156,3 +157,5 @@ export const conversations: Conversation[] = [
         verified: true,
     },
 ];
+
+export const conversations: Conversation[] = conversationsMissingId.map((c, id) => ({ id, ...c }));

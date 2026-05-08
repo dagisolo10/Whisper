@@ -8,10 +8,6 @@ export default async function protect(req: Request, res: Response, next: NextFun
 
         if (!userId) return res.status(401).json({ error: "Unauthorized. Login First", success: false });
 
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-
-        if (!user) return res.status(404).json({ error: "User not found", success: false });
-
         req.userId = userId;
 
         next();

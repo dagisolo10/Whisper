@@ -2,8 +2,11 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import useUtil from "@/store/util-store";
 
-export default function Filters({ setSidebar }: { setSidebar: (val: boolean) => void }) {
+export default function Filters() {
+    const { setSidebar } = useUtil();
+
     return (
         <div className="flex flex-col items-center gap-2 border-r px-2">
             <div className="flex h-18.5 items-center justify-center">

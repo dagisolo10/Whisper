@@ -8,8 +8,10 @@ import type { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-
 
 export async function sendMessage(req: Request, res: Response) {
     const result = await wrapper(async () => {
-        const content = req.body.message as string;
+        const files = Array.isArray(req.files) ? req.files : [];
+        const textContent = typeof req.body.textContent === "string" ? req.body.textContent.trim() : "";
         const messageType = req.body.messageType as MessageType;
+        const imageUrls = messageType === "Image" ? files.map((file) => `/uploads/${file.filename}`) : [];
 
         const senderId = req.userId;
         const roomId = req.body.roomId as string | undefined;
@@ -17,10 +19,12 @@ export async function sendMessage(req: Request, res: Response) {
         const partnerId = typeof rawPartnerId === "string" ? rawPartnerId.trim() : "";
 
         if (!senderId) throw new HttpError(401, "Unauthorized. Login First");
-        if (!content?.trim()) throw new HttpError(400, "Message is required");
         if (!messageType) throw new HttpError(400, "Message type is required");
         if (!Object.values(MessageType).includes(messageType)) throw new HttpError(400, "Invalid message type");
         if (!partnerId && !roomId) throw new HttpError(400, "Either partnerId or roomId are required");
+        if (messageType === "Text" && !textContent) throw new HttpError(400, "Message text is required");
+        if (messageType === "Image" && imageUrls.length === 0) throw new HttpError(400, "At least one image is required");
+        if (!textContent && imageUrls.length === 0) throw new HttpError(400, "Message is required");
 
         const result = await prisma.$transaction(async (tx) => {
             let existingRoom: Room | null = null;
@@ -88,7 +92,8 @@ export async function sendMessage(req: Request, res: Response) {
                 data: {
                     senderId,
                     messageType,
-                    content: content.trim(),
+                    textContent: textContent || null,
+                    imageUrls,
                     roomId: existingRoom.id,
                 },
                 include: {
@@ -124,12 +129,12 @@ export async function sendMessage(req: Request, res: Response) {
 export async function editMessage(req: Request, res: Response) {
     const result = await wrapper(async () => {
         const { id } = req.params;
-        const { content } = req.body;
+        const textContent = typeof req.body.textContent === "string" ? req.body.textContent.trim() : "";
         const senderId = req.userId;
 
         if (!senderId) throw new Error("Unauthorized. Login First");
         if (!id || typeof id !== "string") throw new Error("Message ID is required");
-        if (!content?.trim()) throw new Error("Message is required");
+        if (!textContent) throw new Error("Message text is required");
 
         const existingMessage = await prisma.message.findUnique({
             where: {
@@ -146,6 +151,7 @@ export async function editMessage(req: Request, res: Response) {
 
         if (!existingMessage) throw new HttpError(404, "Message not found");
         if (existingMessage.senderId !== senderId) throw new HttpError(400, "You can only edit your own messages");
+        if (existingMessage.messageType !== "Text") throw new HttpError(400, "Only text messages can be edited");
 
         const isMember = existingMessage.room.members.some((m) => m.userId === senderId);
         if (!isMember) throw new HttpError(400, "Not a member of this room");
@@ -155,7 +161,7 @@ export async function editMessage(req: Request, res: Response) {
                 id,
             },
             data: {
-                content: content.trim(),
+                textContent,
             },
             include: {
                 user: true,

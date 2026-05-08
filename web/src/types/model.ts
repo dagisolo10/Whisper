@@ -2,13 +2,11 @@ export interface User {
     id: string;
     name: string;
     username: string;
-    bio?: string | null;
-    avatarUrl?: string | null;
-    lastOnlineAt: string;
     createdAt: string;
-
-    members?: Member[];
-    messages?: Message[];
+    lastOnlineAt: string;
+    bio?: string | null;
+    mainAvatarUrl?: string | null;
+    avatarUrls: string[];
 }
 
 export interface Member {
@@ -17,34 +15,37 @@ export interface Member {
     roomId: string;
     createdAt: string;
 
-    user?: User;
-    room?: Room;
+    user: User;
 }
 
 export interface Room {
     id: string;
     pairKey: string;
-    lastMessageAt?: string;
-    lastMessageId?: string;
-    lastMessage?: Message;
     createdAt: string;
     updatedAt: string;
-    messages?: Message[];
-    members?: Member[];
+    lastMessageAt?: string;
+    lastMessageId?: string;
+    unreadCount: number;
+
+    lastMessage?: Message;
+    messages: Message[];
+    members: Member[];
 }
 
 export interface Message {
     id: string;
-    content: string;
-    messageType: MessageType;
     read: boolean;
     roomId: string;
+    textContent?: string | null;
+    imageUrls: string[];
     senderId: string;
-    lastInRoom?: Room;
     createdAt: string;
+    messageType: MessageType;
 
-    user?: User;
-    room?: Room;
+    lastInRoom?: PureRoom;
+    user: User;
 }
+
+type PureRoom = Omit<Room, "lastMessage" | "messages" | "members" | "unreadCount">;
 
 export type MessageType = "Text" | "Image" | "Video";
