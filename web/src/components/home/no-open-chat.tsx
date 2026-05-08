@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { EditIcon, Lock, MessageCircleMore, Zap } from "lucide-react";
+import { EditIcon, Lock, Zap } from "lucide-react";
 
 const quickActions = [{ label: "New chat", icon: EditIcon }];
 
@@ -10,13 +10,6 @@ export default function NoOpenChat() {
             <div className="from-chart-3/12 absolute right-20 bottom-12 size-72 rounded-full bg-radial from-0% to-transparent to-70% blur-3xl" />
 
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-8 p-8 text-center">
-                <div className="absolute top-6 right-6">
-                    <Button variant="outline" className="rounded-full">
-                        <MessageCircleMore className="size-4" />
-                        Preview chat
-                    </Button>
-                </div>
-
                 <div className="bg-card border-border flex size-24 items-center justify-center rounded-full border shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
                     <div className="bg-muted flex size-12 items-center justify-center rounded-full">
                         <Zap className="text-primary size-6" />
@@ -25,18 +18,12 @@ export default function NoOpenChat() {
 
                 <div>
                     <h2 className="font-jakarta text-foreground text-3xl font-semibold tracking-tight">Whisper for desktop</h2>
-                    <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-6">
-                        Select a conversation on the left to start messaging, or jump in with a quick action below.
-                    </p>
+                    <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-6">Select a conversation on the left to start messaging, or jump in with a quick action below.</p>
                 </div>
 
                 <div className="flex w-full max-w-3xl justify-center gap-8">
                     {quickActions.map(({ label, icon: Icon }) => (
-                        <Button
-                            key={label}
-                            variant={"ghost"}
-                            className="border-border h-auto w-48 flex-col gap-4 rounded-[1.75rem] border p-6 hover:-translate-y-0.5"
-                        >
+                        <Button key={label} variant={"ghost"} className="border-border h-auto w-48 flex-col gap-4 rounded-[1.75rem] border p-6 hover:-translate-y-0.5">
                             <div className="bg-primary/12 text-primary flex size-12 items-center justify-center rounded-2xl">
                                 <Icon className="size-5" />
                             </div>

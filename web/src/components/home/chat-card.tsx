@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { CheckCheck, Check } from "lucide-react";
 import { Message } from "@/types/model";
 import useUser from "@/store/auth-store";
-import { formateDate } from "@/utils/helper-functions";
+import { formatDate } from "@/utils/helper-functions";
 import { resolveMediaUrl } from "@/lib/media";
 import { ImageCarousel } from "../image-carousel";
 
@@ -49,7 +49,7 @@ export default function ChatCard({ message }: { message: Message }) {
                     )}
                 </div>
                 <div className={cn("flex", isMine ? "justify-end" : "justify-start")}>
-                    <p className={cn("text-muted-foreground px-2 text-xs", isMine ? "text-right" : "text-left")}>{formateDate(message.createdAt, "messageSent")}</p>
+                    <p className={cn("text-muted-foreground px-2 text-xs", isMine ? "text-right" : "text-left")}>{formatDate(message.createdAt, "messageSent")}</p>
                     <Icon className={cn(message.read ? "text-emerald-500" : "text-destructive", isMine ? "block" : "hidden", "size-4")} />
                 </div>
             </div>

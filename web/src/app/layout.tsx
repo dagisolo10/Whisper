@@ -21,10 +21,8 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <html lang="en" className="h-full antialiased" style={fontVars}>
             <body className="dark flex min-h-full flex-col">
                 <ClerkProvider>
-                    <AuthWrapper>
-                        {children}
-                        <Toaster position="top-center" />
-                    </AuthWrapper>
+                    <AuthWrapper>{children}</AuthWrapper>
+                    <Toaster position="top-center" />
                 </ClerkProvider>
             </body>
         </html>

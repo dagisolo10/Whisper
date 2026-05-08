@@ -13,7 +13,7 @@ export default function ChatPage() {
     const { getConversation } = useRoom();
 
     useEffect(() => {
-        if (roomId) getConversation(roomId, "lastToken");
+        getConversation(roomId, lastToken ?? "");
     }, [roomId, getConversation, lastToken]);
 
     return <OpenChatPanel />;

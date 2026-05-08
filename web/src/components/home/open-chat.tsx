@@ -9,7 +9,7 @@ import useRoom from "@/store/room-store";
 import { useRouter } from "next/navigation";
 import useUser from "@/store/auth-store";
 import Image from "next/image";
-import { formateDate } from "@/utils/helper-functions";
+import { formatDate } from "@/utils/helper-functions";
 import { ChangeEvent, SyntheticEvent, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -45,7 +45,7 @@ export default function OpenChatPanel() {
     const pendingImagesRef = useRef<PendingImage[]>([]);
 
     useEffect(() => {
-        if (!activeRoom) router.replace("/");
+        if (!activeRoom === null) router.replace("/");
     }, [router, activeRoom]);
 
     useEffect(() => {
@@ -62,16 +62,16 @@ export default function OpenChatPanel() {
         };
     }, []);
 
-    if (!activeRoom) {
+    if (activeRoom === undefined || activeRoom === null) {
         return (
             <div className="flex h-screen flex-1 flex-col items-center justify-center gap-2">
                 <Loader2 className="text-primary size-8 animate-spin" />
-                <p className="text-muted-foreground animate-pulse text-sm">Loading conversation...</p>
+                <p className="text-muted-foreground animate-pulse text-sm">{activeRoom === undefined ? "Loading conversation..." : "Redirecting..."}</p>
             </div>
         );
     }
 
-    const partner = activeRoom.members.filter((member) => member.userId !== user?.id)[0].user;
+    const partner = activeRoom.members.find((member) => member.userId !== user?.id)?.user;
 
     if (!partner) return null;
 
@@ -79,12 +79,6 @@ export default function OpenChatPanel() {
         .split(" ")
         .map((letter) => letter[0])
         .join("");
-
-    // const partnerGallery = partner.avatarUrls.map((avatarUrl, index) => ({
-    //     id: `${partner.id}-${index}`,
-    //     src: resolveMediaUrl(avatarUrl) ?? avatarUrl,
-    //     alt: `${partner.name} avatar ${index + 1}`,
-    // }));
 
     const isOnline = !true;
 
@@ -138,6 +132,8 @@ export default function OpenChatPanel() {
 
         setIsSending(true);
 
+        let sent = false;
+
         try {
             const trimmedMessage = message.trim();
 
@@ -151,6 +147,7 @@ export default function OpenChatPanel() {
                 }
                 await sendMessage(formData, "token");
                 clearPendingImages();
+                sent = true;
             } else {
                 const payload: MessagePayload = {
                     textContent: trimmedMessage,
@@ -158,13 +155,14 @@ export default function OpenChatPanel() {
                     roomId: activeRoom.id,
                 };
                 await sendMessage(payload, "token");
+                sent = true;
             }
         } catch (error) {
             console.error("Error sending message", error);
             toast.error("Couldn't send message", { description: "Please try again." });
         } finally {
             setIsSending(false);
-            setMessage("");
+            if (sent) setMessage("");
         }
     }
 
@@ -181,14 +179,8 @@ export default function OpenChatPanel() {
                 <div className="flex items-center gap-4">
                     <div>
                         {partner.mainAvatarUrl ? (
-                            // <ImageCarousel galleryImages={partnerGallery}>
-                            //     {({ openPreview }) => (
-                            //         <button type="button" onClick={() => openPreview(partnerGallery.findIndex((img) => img.src.includes(partner.mainAvatarUrl!)))} className="cursor-zoom-in">
-                            <Image src={resolveMediaUrl(partner.mainAvatarUrl!) ?? partner.mainAvatarUrl!} width={30} height={30} alt={partner.name} unoptimized />
+                            <Image className="size-8 rounded-full object-cover" width={32} height={32} src={resolveMediaUrl(partner.mainAvatarUrl!) ?? partner.mainAvatarUrl!} alt={partner.name} unoptimized />
                         ) : (
-                            //         </button>
-                            //     )}
-                            // </ImageCarousel>
                             <div className={cn("border-primary flex size-8 shrink-0 items-center justify-center rounded-full border bg-linear-to-br text-xs font-semibold text-white shadow-sm")}>{avatar}</div>
                         )}
                         {isOnline && <div className="absolute right-0 bottom-0 size-1.5 rounded-full bg-emerald-500" />}
@@ -196,7 +188,7 @@ export default function OpenChatPanel() {
 
                     <div>
                         <h2 className="font-jakarta text-sm font-semibold">{partner.name}</h2>
-                        <p className={cn(isOnline ? "text-emerald-500" : "text-muted-foreground", "text-xs font-semibold")}>{isOnline ? "Online" : `Last seen ${formateDate(partner.lastOnlineAt, "lastOnline")}`}</p>
+                        <p className={cn(isOnline ? "text-emerald-500" : "text-muted-foreground", "text-xs font-semibold")}>{isOnline ? "Online" : `Last seen ${formatDate(partner.lastOnlineAt, "lastOnline")}`}</p>
                     </div>
                 </div>
 
@@ -225,7 +217,7 @@ export default function OpenChatPanel() {
                             const isNewDay = index === messages.length - 1 || new Date(message.createdAt).toDateString() !== new Date(messages[index + 1].createdAt).toDateString();
                             return (
                                 <div key={message.id}>
-                                    {isNewDay && <p className="m-auto mb-4 w-fit rounded-full bg-white/10 px-4 py-1 text-xs">{formateDate(message.createdAt, "daySeparator")}</p>}
+                                    {isNewDay && <p className="m-auto mb-4 w-fit rounded-full bg-white/10 px-4 py-1 text-xs">{formatDate(message.createdAt, "daySeparator")}</p>}
                                     <ChatCard message={message} />
                                 </div>
                             );
@@ -298,11 +290,11 @@ export default function OpenChatPanel() {
 
                 <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Message" className="border-none" disabled={isSending} />
 
-                <Button type="button" variant="outline" size="icon" disabled={isSending}>
+                <Button type="button" variant="outline" size="icon" aria-label="Insert emoji" disabled={isSending}>
                     <Smile className="size-4" />
                 </Button>
 
-                <Button variant={"outline"} size="icon" disabled={!canSend}>
+                <Button variant={"outline"} size="icon" disabled={!canSend} aria-label={isSending ? "Sending message" : "Send message"}>
                     {isSending ? <Loader2 className="size-4 animate-spin" /> : <SendHorizontal className="size-4" />}
                 </Button>
             </form>
@@ -335,7 +327,7 @@ function NoMessages({ roomName }: { roomName: string }) {
                     <div className="bg-primary/20 flex size-12 rotate-3 items-center justify-center rounded-2xl">
                         <Hand className="text-primary size-6" />
                     </div>
-                    <Button variant={"outline"} className="rounded-full px-4 text-sm font-semibold transition hover:scale-105 active:scale-95">
+                    <Button variant={"outline"} aria-label={`Wave hello to ${roomName}`} className="rounded-full px-4 text-sm font-semibold transition hover:scale-105 active:scale-95">
                         👋 Wave Hello
                     </Button>
                 </div>

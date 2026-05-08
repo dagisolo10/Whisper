@@ -1,6 +1,6 @@
 type DateContext = "lastMessage" | "messageSent" | "lastOnline" | "daySeparator";
 
-export const formateDate = (date: string | Date, context: DateContext) => {
+export const formatDate = (date: string | Date, context: DateContext) => {
     const d = new Date(date);
     const now = new Date();
     const isToday = d.toDateString() === now.toDateString();
@@ -27,6 +27,7 @@ export const formateDate = (date: string | Date, context: DateContext) => {
             return d.toLocaleString("en-US", {
                 hour: "2-digit",
                 minute: "2-digit",
+                hour12: true,
             });
         }
         return d.toLocaleString("en-US", {
@@ -34,6 +35,7 @@ export const formateDate = (date: string | Date, context: DateContext) => {
             day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
+            hour12: true,
         });
     }
 

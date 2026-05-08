@@ -12,7 +12,7 @@ interface RoomStore {
     activeRoom: Room | null;
     currentRoomId: string | null;
 
-    createRoom: (token: string, payload: RoomPayload) => Promise<void>;
+    createRoom: (payload: RoomPayload, token: string) => Promise<void>;
 
     getRooms: (token: string) => Promise<void>;
     getConversation: (roomId: string, token: string) => Promise<void>;

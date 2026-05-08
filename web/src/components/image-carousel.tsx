@@ -48,19 +48,24 @@ export function ImageCarousel({ galleryImages, initialIndex = 0, children, rende
         typeof children === "function" ? (
             children({ openPreview })
         ) : (
-            <span role="button" tabIndex={0} className="cursor-pointer" onClick={() => openPreview()}>
+            <button type="button" className="cursor-pointer" onClick={() => openPreview()}>
                 {children}
-            </span>
+            </button>
         );
 
     useEffect(() => {
         if (!api) return;
 
-        api.on("select", () => {
+        const onselect = () => {
             setActiveIndex(api.selectedScrollSnap());
-        });
+        };
+        api.on("select", onselect);
 
         api.scrollTo(initialIndex, true);
+
+        return () => {
+            api.off("select", onselect);
+        };
     }, [api, initialIndex]);
 
     if (galleryImages.length === 0) return trigger;
