@@ -1,7 +1,7 @@
 import { MessageType } from "./model";
 
 interface BaseMessagePayload {
-    content: string;
+    textContent: string;
     messageType: MessageType;
 }
 
@@ -15,6 +15,7 @@ type MessagePayloadWithRecipientId = BaseMessagePayload & {
 };
 
 export type MessagePayload = MessagePayloadWithRoomId | MessagePayloadWithRecipientId;
+export type SendMessagePayload = MessagePayload | FormData;
 
 export interface RoomPayload {
     partnerId: string;
@@ -24,12 +25,14 @@ export interface UserPayload {
     name: string;
     username: string;
     bio?: string;
-    profile?: string;
+    mainAvatarUrl?: string | null;
+    avatarUrls?: string[];
 }
 
 export interface UpdateUserPayload {
     name?: string;
     username?: string;
     bio?: string;
-    profile?: string;
+    mainAvatarUrl?: string | null;
+    avatarUrls?: string[];
 }

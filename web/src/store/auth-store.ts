@@ -166,10 +166,7 @@ async function fetchUser(token: string, set: (partial: Partial<AuthStore>) => vo
         if (name === "CanceledError" || name === "AbortError") return;
 
         const backendError = isAxiosError(err) ? (err.response?.data as { error?: string } | undefined)?.error : undefined;
-        const message =
-            isAxiosError(err) && err.code === "ECONNABORTED"
-                ? "Request timed out. Please check your connection."
-                : (backendError ?? (err instanceof Error ? err.message : "Error fetching user."));
+        const message = isAxiosError(err) && err.code === "ECONNABORTED" ? "Request timed out. Please check your connection." : (backendError ?? (err instanceof Error ? err.message : "Error fetching user."));
         console.error("Error fetching user in store", message);
 
         set({ user: null, loading: false, error: message, abortController: null });

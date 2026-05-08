@@ -1,7 +1,7 @@
 import api from "@/lib/axios";
 import { create } from "zustand";
 import { Message } from "@/types/model";
-import { MessagePayload } from "@/types/payloads";
+import { SendMessagePayload } from "@/types/payloads";
 import { MessageResponse, MessageSendResponse } from "@/types/response";
 
 interface MessageStore {
@@ -12,7 +12,7 @@ interface MessageStore {
     setMessages: (messages: Message[]) => void;
     editMessage: (payload: Message, token: string) => Promise<void>;
     deleteMessage: (messageId: string, token: string) => Promise<void>;
-    sendMessage: (payload: MessagePayload, token: string) => Promise<void>;
+    sendMessage: (payload: SendMessagePayload, token: string) => Promise<void>;
 }
 
 const useMessage = create<MessageStore>((set) => ({
@@ -42,7 +42,7 @@ const useMessage = create<MessageStore>((set) => ({
             set((state) => {
                 const exists = state.messages.some((msg) => msg.id === newMessage.id);
                 if (exists) return state;
-                return { messages: [...state.messages, newMessage] };
+                return { messages: [newMessage, ...state.messages] };
             });
         } catch (err) {
             console.error("Error sending message", err);

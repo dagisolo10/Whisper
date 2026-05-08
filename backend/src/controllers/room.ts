@@ -27,16 +27,44 @@ export async function createRoom(req: Request, res: Response) {
                 },
                 include: {
                     members: { include: { user: true } },
+                    _count: {
+                        select: {
+                            messages: {
+                                where: {
+                                    read: false,
+                                    senderId: {
+                                        not: userId,
+                                    },
+                                },
+                            },
+                        },
+                    },
                 },
             });
 
-            return room;
+            return { ...room, unreadCount: room._count.messages };
         } catch (error) {
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-                return await prisma.room.findUnique({
+                const room = await prisma.room.findUnique({
                     where: { pairKey },
-                    include: { members: { include: { user: true } } },
+                    include: {
+                        members: { include: { user: true } },
+                        _count: {
+                            select: {
+                                messages: {
+                                    where: {
+                                        read: false,
+                                        senderId: {
+                                            not: userId,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
                 });
+
+                if (room) return { ...room, unreadCount: room._count.messages };
             }
 
             throw error;
@@ -107,9 +135,21 @@ export async function getConversation(req: Request, res: Response) {
                 where: { id: roomId, members: { some: { userId } } },
                 include: {
                     members: { include: { user: true } },
+                    _count: {
+                        select: {
+                            messages: {
+                                where: {
+                                    read: false,
+                                    senderId: {
+                                        not: userId,
+                                    },
+                                },
+                            },
+                        },
+                    },
                     messages: {
                         take: 50,
-                        include: { user: true },
+                        include: { user: true, lastInRoom: true },
                         orderBy: { createdAt: "desc" },
                     },
                 },
@@ -117,7 +157,7 @@ export async function getConversation(req: Request, res: Response) {
 
             if (!room) throw new HttpError(404, "Room not found");
 
-            return room;
+            return { ...room, unreadCount: room._count.messages };
         });
 
         const io: SocketServer<ClientToServerEvents, ServerToClientEvents> = req.app.get("io");

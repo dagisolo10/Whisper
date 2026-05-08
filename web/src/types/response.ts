@@ -26,14 +26,19 @@ export interface UserSearchResponse {
     success: boolean;
 }
 
-export interface RoomResponse {
-    data: Room;
+export interface CreateRoomResponse {
+    data: Omit<Room, "messages" | "lastMessage">;
+    error?: string;
+    success: boolean;
+}
+export interface ConversationRoomResponse {
+    data: Omit<Room, "lastMessage">;
     error?: string;
     success: boolean;
 }
 
 export interface RoomsResponse {
-    data: Room[];
+    data: Omit<Room, "messages">[];
     error?: string;
     success: boolean;
 }
