@@ -88,10 +88,16 @@ export async function updateUser(req: Request, res: Response) {
         if (bio !== undefined) updateData.bio = bio;
         if (name !== undefined) updateData.name = name;
         if (username !== undefined) updateData.username = username;
+
         if (mainAvatarUrl !== undefined || avatarUrls !== undefined) {
             const normalizedAvatars = normalizeAvatarFields(mainAvatarUrl, avatarUrls);
-            updateData.mainAvatarUrl = normalizedAvatars.mainAvatarUrl;
-            updateData.avatarUrls = normalizedAvatars.avatarUrls;
+            if (mainAvatarUrl !== undefined) {
+                updateData.mainAvatarUrl = normalizedAvatars.mainAvatarUrl;
+            }
+
+            if (avatarUrls !== undefined) {
+                updateData.avatarUrls = normalizedAvatars.avatarUrls;
+            }
         }
 
         if (Object.keys(updateData).length === 0) throw new HttpError(400, "No fields provided for update");
@@ -114,42 +120,38 @@ export async function updateUser(req: Request, res: Response) {
     return result.success ? res.status(200).json(result) : res.status(result.status).json(result);
 }
 
-// export async function getUser(req: Request, res: Response) {
-//     const result = await wrapper(async () => {
-//         const id = req.userId;
-
-//         if (!id) throw new HttpError(401, "Unauthorized. Login First");
-
-//         const user = await prisma.user.findUnique({ where: { id } });
-
-//         if (!user) throw new HttpError(404, "User not found");
-
-//         return user;
-//     }, "getUser");
-
-//     return result.success ? res.status(200).json(result) : res.status(result.status).json(result);
-// }
-
 export async function getUser(req: Request, res: Response) {
     const result = await wrapper(async () => {
         const id = req.userId;
+
         if (!id) throw new HttpError(401, "Unauthorized. Login First");
 
-        let user = await prisma.user.findUnique({ where: { id } });
+        let user: User;
 
-        if (!user) {
-            const clerkUser = await clerkClient.users.getUser(id);
-
-            user = await prisma.user.create({
-                data: {
-                    id,
-                    lastOnlineAt: new Date(),
-                    mainAvatarUrl: clerkUser.imageUrl,
-                    avatarUrls: clerkUser.imageUrl ? [clerkUser.imageUrl] : [],
-                    username: clerkUser.username || `user_${id.slice(-5)}`,
-                    name: `${clerkUser.firstName} ${clerkUser.lastName}`.trim() || "New User",
-                },
+        try {
+            user = await prisma.user.update({
+                where: { id },
+                data: { lastOnlineAt: new Date() },
             });
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+                const clerkUser = await clerkClient.users.getUser(id);
+
+                user = await prisma.user.upsert({
+                    where: { id },
+                    update: { lastOnlineAt: new Date() },
+                    create: {
+                        id,
+                        lastOnlineAt: new Date(),
+                        mainAvatarUrl: clerkUser.imageUrl,
+                        avatarUrls: clerkUser.imageUrl ? [clerkUser.imageUrl] : [],
+                        username: clerkUser.username || `user_${id.slice(-5)}`,
+                        name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "New User",
+                    },
+                });
+            } else {
+                throw error;
+            }
         }
 
         return user;

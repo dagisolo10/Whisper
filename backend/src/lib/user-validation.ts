@@ -31,12 +31,10 @@ export const createUserPayloadSchema = z.object({
     mainAvatarUrl: z
         .string()
         .trim()
-        .transform((avatarUrl: string | undefined) => (avatarUrl && avatarUrl.length > 0 ? avatarUrl : null))
+        .nullable()
+        .transform((avatarUrl) => (avatarUrl && avatarUrl.length > 0 ? avatarUrl : null))
         .optional(),
-    avatarUrls: z
-        .array(imageUrlSchema)
-        .transform(normalizeImageUrls)
-        .optional(),
+    avatarUrls: z.array(imageUrlSchema).transform(normalizeImageUrls).optional(),
 });
 
 export const updateUserPayloadSchema = z.object({
@@ -51,12 +49,10 @@ export const updateUserPayloadSchema = z.object({
     mainAvatarUrl: z
         .string()
         .trim()
-        .transform((avatarUrl: string | undefined) => (avatarUrl && avatarUrl.length > 0 ? avatarUrl : null))
+        .nullable()
+        .transform((avatarUrl) => (avatarUrl && avatarUrl.length > 0 ? avatarUrl : null))
         .optional(),
-    avatarUrls: z
-        .array(imageUrlSchema)
-        .transform(normalizeImageUrls)
-        .optional(),
+    avatarUrls: z.array(imageUrlSchema).transform(normalizeImageUrls).optional(),
 });
 
 export type CreateUserPayload = z.infer<typeof createUserPayloadSchema>;

@@ -1,3 +1,4 @@
+import fs from "fs/promises";
 import prisma from "@/lib/prisma";
 import wrapper from "@/util/action-wrapper";
 import { HttpError } from "@/lib/http-error";
@@ -6,11 +7,21 @@ import { Server as SocketServer } from "socket.io";
 import { MessageType, Prisma, type Room } from "@prisma/client";
 import type { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-events.js";
 
+const cleanupFiles = async (files: any[]) => {
+    await Promise.all(files.map((file) => fs.unlink(file.path).catch(() => {})));
+};
+
 export async function sendMessage(req: Request, res: Response) {
     const result = await wrapper(async () => {
         const files = Array.isArray(req.files) ? req.files : [];
-        const textContent = typeof req.body.textContent === "string" ? req.body.textContent.trim() : "";
         const messageType = req.body.messageType as MessageType;
+
+        if (files.length > 0 && messageType !== "Image") {
+            await cleanupFiles(files);
+            throw new HttpError(400, "Files can only be uploaded with Image message type");
+        }
+
+        const textContent = typeof req.body.textContent === "string" ? req.body.textContent.trim() : "";
         const imageUrls = messageType === "Image" ? files.map((file) => `/uploads/${file.filename}`) : [];
 
         const senderId = req.userId;
@@ -18,13 +29,18 @@ export async function sendMessage(req: Request, res: Response) {
         const rawPartnerId = req.body.partnerId;
         const partnerId = typeof rawPartnerId === "string" ? rawPartnerId.trim() : "";
 
-        if (!senderId) throw new HttpError(401, "Unauthorized. Login First");
-        if (!messageType) throw new HttpError(400, "Message type is required");
-        if (!Object.values(MessageType).includes(messageType)) throw new HttpError(400, "Invalid message type");
-        if (!partnerId && !roomId) throw new HttpError(400, "Either partnerId or roomId are required");
-        if (messageType === "Text" && !textContent) throw new HttpError(400, "Message text is required");
-        if (messageType === "Image" && imageUrls.length === 0) throw new HttpError(400, "At least one image is required");
-        if (!textContent && imageUrls.length === 0) throw new HttpError(400, "Message is required");
+        try {
+            if (!senderId) throw new HttpError(401, "Unauthorized. Login First");
+            if (!messageType) throw new HttpError(400, "Message type is required");
+            if (!Object.values(MessageType).includes(messageType)) throw new HttpError(400, "Invalid message type");
+            if (!partnerId && !roomId) throw new HttpError(400, "Either partnerId or roomId are required");
+            if (messageType === "Text" && !textContent) throw new HttpError(400, "Message text is required");
+            if (messageType === "Image" && imageUrls.length === 0) throw new HttpError(400, "At least one image is required");
+            if (!textContent && imageUrls.length === 0) throw new HttpError(400, "Message is required");
+        } catch (error) {
+            await cleanupFiles(files);
+            throw error;
+        }
 
         const result = await prisma.$transaction(async (tx) => {
             let existingRoom: Room | null = null;
@@ -132,9 +148,9 @@ export async function editMessage(req: Request, res: Response) {
         const textContent = typeof req.body.textContent === "string" ? req.body.textContent.trim() : "";
         const senderId = req.userId;
 
-        if (!senderId) throw new Error("Unauthorized. Login First");
-        if (!id || typeof id !== "string") throw new Error("Message ID is required");
-        if (!textContent) throw new Error("Message text is required");
+        if (!senderId) throw new HttpError(401, "Unauthorized. Login First");
+        if (!id || typeof id !== "string") throw new HttpError(400, "Message ID is required");
+        if (!textContent) throw new HttpError(400, "Message text is required");
 
         const existingMessage = await prisma.message.findUnique({
             where: {
