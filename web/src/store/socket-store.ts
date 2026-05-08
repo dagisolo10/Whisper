@@ -63,17 +63,14 @@ const useSocket = create<SocketStore>((set, get) => ({
             const activeRoomId = useRoom.getState().activeRoomId;
             const currentMessages = useMessage.getState().messages;
 
-            if (message.roomId !== roomId) return;
             const exists = currentMessages.some((msg) => msg.id === message.id);
             if (exists) return;
 
-            const inRoom = roomId === activeRoomId && message.senderId !== user?.id;
-
-            useMessage.getState().addMessage(message);
-
-            if (inRoom) {
-                socket.emit("markAsRead", roomId);
+            if (message.roomId === activeRoomId) {
+                useMessage.getState().addMessage(message);
+                if (message.senderId !== user?.id) socket.emit("markAsRead", roomId);
             }
+            useRoom.getState().updateRoomPreview(message);
         });
 
         socket.off("messageRead");

@@ -23,7 +23,6 @@ export default function ChatList() {
     const onlineUsers = useSocket((s) => s.onlineUsers);
     const typingUsers = useSocket((s) => s.typingUsers);
 
-    // TODO: rely on socket instead of full refetch
     useEffect(() => {
         getRooms(lastToken ?? "");
     }, [getRooms, lastToken]);

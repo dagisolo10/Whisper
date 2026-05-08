@@ -3,7 +3,7 @@ import useMessage from "./message-store";
 
 import api from "@/lib/axios";
 import { create } from "zustand";
-import { Room } from "@/types/model";
+import { Message, Room } from "@/types/model";
 import { RoomPayload } from "@/types/payloads";
 import { ConversationRoomResponse, CreateRoomResponse, RoomsResponse } from "@/types/response";
 
@@ -12,10 +12,10 @@ interface RoomStore {
     activeRoom: Room | null;
     activeRoomId: string | null;
 
-    createRoom: (payload: RoomPayload, token: string) => Promise<void>;
-
     getRooms: (token: string) => Promise<void>;
+    updateRoomPreview: (message: Message) => void;
     getConversation: (roomId: string, token: string) => Promise<void>;
+    createRoom: (payload: RoomPayload, token: string) => Promise<void>;
 }
 
 const useRoom = create<RoomStore>((set) => ({
@@ -71,11 +71,39 @@ const useRoom = create<RoomStore>((set) => ({
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { messages, ...roomWithoutMessages } = data.data;
 
-            set({ activeRoomId: roomId, activeRoom: roomWithoutMessages as Room });
+            set((state) => ({
+                activeRoomId: roomId,
+                activeRoom: roomWithoutMessages as Room,
+                rooms: state.rooms.map((room) => (room.id === roomId ? { ...room, unreadCount: 0 } : room)),
+            }));
             useMessage.getState().setMessages(data.data.messages || []);
         } catch (err) {
             console.error("Error fetching conversation", err);
         }
+    },
+
+    updateRoomPreview: (message) => {
+        set((state) => {
+            const updatedRooms = state.rooms.map((room) => {
+                if (room.id === message.roomId) {
+                    return {
+                        ...room,
+                        lastMessage: message,
+                        lastMessageAt: message.createdAt,
+                        unreadCount: room.id === state.activeRoomId ? 0 : room.unreadCount + 1,
+                    };
+                }
+                return room;
+            });
+
+            const sortedRooms = [...updatedRooms].sort((a, b) => {
+                const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+                const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+                return timeB - timeA;
+            });
+
+            return { rooms: sortedRooms };
+        });
     },
 }));
 

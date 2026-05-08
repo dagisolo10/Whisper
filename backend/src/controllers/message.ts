@@ -4,7 +4,7 @@ import wrapper from "@/util/action-wrapper";
 import { HttpError } from "@/lib/http-error";
 import type { Request, Response } from "express";
 import { Server as SocketServer } from "socket.io";
-import { MessageType, Prisma, type Room } from "@prisma/client";
+import { MessageType, Prisma, type Member, type Room } from "@prisma/client";
 import type { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-events.js";
 
 const cleanupFiles = async (files: Express.Multer.File[]) => {
@@ -43,7 +43,7 @@ export async function sendMessage(req: Request, res: Response) {
         }
 
         const result = await prisma.$transaction(async (tx) => {
-            let existingRoom: Room | null = null;
+            let existingRoom: (Room & { members: Member[] }) | null = null;
 
             const memberIds = [senderId, partnerId];
             const pairKey = memberIds.sort().join("_");
@@ -131,6 +131,9 @@ export async function sendMessage(req: Request, res: Response) {
 
             if (io) {
                 io.to(existingRoom.id).emit("newMessage", newMessage, existingRoom.id);
+                existingRoom.members.forEach((member) => {
+                    io.to(`user_${member.userId}`).emit("newMessage", newMessage, existingRoom.id);
+                });
             }
 
             return { roomId: existingRoom.id, message: newMessage };

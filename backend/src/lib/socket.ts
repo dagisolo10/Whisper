@@ -48,6 +48,8 @@ export default function initializeSocket(server: HttpServer) {
 
     io.on("connection", (socket) => {
         const userId = socket.data.userId;
+        if (userId) socket.join(`user_${userId}`);
+
         const currentSockets = userSocketMap.get(userId) || [];
         userSocketMap.set(userId, [...currentSockets, socket.id]);
         const connectedUsers = Array.from(userSocketMap.keys());
@@ -118,9 +120,18 @@ export default function initializeSocket(server: HttpServer) {
             }
         });
 
-        socket.on("sendMessage", (newMessage: Message, roomId: string) => {
+        socket.on("sendMessage", async (newMessage: Message, roomId: string) => {
             if (socket.data.userId !== newMessage.senderId) return;
+
+            const room = await prisma.room.findUnique({ where: { id: roomId }, include: { members: true } });
+
             io.to(roomId).emit("newMessage", newMessage, roomId);
+
+            if (room) {
+                room.members.forEach((member) => {
+                    io.to(`user_${member.userId}`).emit("newMessage", newMessage, roomId);
+                });
+            }
         });
 
         socket.on("editMessage", (updatedMessage: Message, roomId: string) => {
