@@ -1,15 +1,16 @@
 import type { Message } from "@prisma/client";
 
 export interface ServerToClientEvents {
-    newMessage: (message: Message, roomId: string) => void;
     messageRead: (roomId: string) => void;
     onlineUsers: (userIds: string[]) => void;
     messageEdited: (message: Message) => void;
+    newMessage: (message: Message, roomId: string) => void;
+    roomJoinError: (roomId: string, message: string) => void;
+    roomLeaveError: (roomId: string, message: string) => void;
     messageDeleted: (messageId: string, roomId: string) => void;
     userStartedTyping: (userId: string, roomId: string) => void;
     userStoppedTyping: (userId: string, roomId: string) => void;
-    roomJoinError: (roomId: string, message: string) => void;
-    roomLeaveError: (roomId: string, message: string) => void;
+    roomError: (roomId: string, message: string, details: string | undefined) => void;
 }
 
 export interface ClientToServerEvents {

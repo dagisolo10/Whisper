@@ -98,19 +98,24 @@ export default function initializeSocket(server: HttpServer) {
                 return;
             }
 
-            const isMember = await prisma.room.findFirst({ where: { id: roomId, members: { some: { userId } } }, select: { id: true } });
+            try {
+                const isMember = await prisma.room.findFirst({ where: { id: roomId, members: { some: { userId } } }, select: { id: true } });
 
-            if (!isMember) {
-                socket.emit("roomJoinError", roomId, "Unauthorized: not a member of the room");
-                return;
+                if (!isMember) {
+                    socket.emit("roomJoinError", roomId, "Unauthorized: not a member of the room");
+                    return;
+                }
+
+                await prisma.message.updateMany({
+                    where: { roomId, read: false, senderId: { not: userId } },
+                    data: { read: true },
+                });
+
+                io.to(roomId).emit("messageRead", roomId);
+            } catch (error: any) {
+                console.error(`Error in markAsRead for room ${roomId}:`, error);
+                socket.emit("roomError", roomId, "Failed to mark messages as read", process.env.NODE_ENV === "development" ? error.message : undefined);
             }
-
-            await prisma.message.updateMany({
-                where: { roomId, read: false, senderId: { not: userId } },
-                data: { read: true },
-            });
-
-            io.to(roomId).emit("messageRead", roomId);
         });
 
         socket.on("sendMessage", (newMessage: Message, roomId: string) => {
