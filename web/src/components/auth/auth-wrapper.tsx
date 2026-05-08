@@ -19,12 +19,11 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (!noAuth && (!isLoaded || !isSignedIn)) return;
-        async function fetchUser() {
+
+        (async () => {
             const token = noAuth ? localStorage.getItem("test_user_id") : await getToken();
             await getUser(token ?? "");
-        }
-
-        fetchUser();
+        })();
     }, [getToken, getUser, isLoaded, isSignedIn, noAuth]);
 
     useEffect(() => {
@@ -35,31 +34,31 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
             clearUser();
             return;
         }
-    }, [user, loading, disconnectSocket, clearUser, connectSocket]);
+    }, [clearUser, disconnectSocket, loading, user]);
 
     useEffect(() => {
         if (!user || loading) return;
 
-        let cancelled = false;
-
-        if (!cancelled) {
-            const token = localStorage.getItem("test_user_id");
+        let active = true;
+        (async () => {
+            const token = noAuth ? localStorage.getItem("test_user_id") : await getToken();
             connectSocket(token ?? "");
-        }
+            if (active) connectSocket(token ?? "");
+        })();
 
         return () => {
-            cancelled = true;
+            active = false;
         };
-    }, [connectSocket, loading, user]);
+    }, [connectSocket, getToken, loading, noAuth, user]);
 
-    if ((noAuth && loading) || !isLoaded || (isSignedIn && loading))
+    if (noAuth ? loading : !isLoaded || (isSignedIn && loading))
         return (
             <div className="flex h-screen w-full items-center justify-center">
                 <Loader loading={loading} />
             </div>
         );
 
-    // if ((noAuth && !user) || (isSignedIn && !user)) return <div className="flex h-screen items-center justify-center">Error loading profile...</div>;
+    if (noAuth ? !user : isSignedIn && !user) return <div className="flex h-screen items-center justify-center">Error loading profile...</div>;
 
     return children;
 }
