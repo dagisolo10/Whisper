@@ -114,6 +114,20 @@ export default function useChat() {
         }
     }
 
+    async function sendWave(recipientId: string) {
+        try {
+            const payload: MessagePayload = {
+                textContent: "Hi",
+                messageType: "Text",
+                recipientId,
+            };
+            await sendMessage(payload, lastToken ?? "");
+        } catch (err) {
+            console.error("Error sending wave", err);
+            toast.error("Couldn't send wave", { description: "Please try again." });
+        }
+    }
+
     async function handleImageSelect(e: ChangeEvent<HTMLInputElement>) {
         const selectedFiles = Array.from(e.target.files ?? []);
         if (!selectedFiles.length || !activeRoom || isSending) return;
@@ -185,6 +199,7 @@ export default function useChat() {
         message,
         isTyping,
         messages,
+        sendWave,
         scrollRef,
         isSending,
         activeRoom,

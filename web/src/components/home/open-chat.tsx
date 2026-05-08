@@ -124,7 +124,7 @@ export default function OpenChatPanel() {
                     </div>
                 </div>
             ) : (
-                <NoMessages roomName={partner.name} />
+                <NoMessages partner={partner} />
             )}
 
             {pendingImages.length > 0 && (

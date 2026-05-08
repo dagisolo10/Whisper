@@ -1,7 +1,11 @@
+import { User } from "@/types/model";
+import useChat from "@/hooks/use-chat";
 import { Button } from "@/components/ui/button";
 import { MessageSquareDashed, Hand } from "lucide-react";
 
-export default function NoMessages({ roomName }: { roomName: string }) {
+export default function NoMessages({ partner: partner }: { partner: User }) {
+    const { sendWave } = useChat();
+
     return (
         <div className="flex flex-1 flex-col items-center justify-center">
             <div>
@@ -15,7 +19,7 @@ export default function NoMessages({ roomName }: { roomName: string }) {
                         No whispers yet.{" "}
                         <span className="text-white">
                             Say hello to <br />
-                            {roomName}{" "}
+                            {partner.name}{" "}
                         </span>
                         <br />
                         to start the conversation!
@@ -27,8 +31,9 @@ export default function NoMessages({ roomName }: { roomName: string }) {
                         <Hand className="text-primary size-6" />
                     </div>
                     <Button
+                        onClick={() => sendWave(partner.id)}
                         variant={"outline"}
-                        aria-label={`Wave hello to ${roomName}`}
+                        aria-label={`Wave hello to ${partner.name}`}
                         className="rounded-full px-4 text-sm font-semibold transition hover:scale-105 active:scale-95"
                     >
                         👋 Wave Hello
