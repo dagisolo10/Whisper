@@ -3,3 +3,9 @@ export interface GalleryImage {
     src: string;
     alt: string;
 }
+
+export type PendingImage = {
+    file: File;
+    previewUrl: string;
+    id: string;
+};

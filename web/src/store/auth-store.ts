@@ -28,7 +28,7 @@ interface AuthStore {
 
 const useUser = create<AuthStore>((set, get) => ({
     user: null,
-    loading: false,
+    loading: true,
     error: null,
     lastToken: null,
     abortController: null,

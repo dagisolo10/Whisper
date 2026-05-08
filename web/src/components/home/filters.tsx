@@ -3,13 +3,26 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import useUtil from "@/store/util-store";
+import useUser from "@/store/auth-store";
+import Image from "next/image";
+import { getInitials } from "@/utils/helper-functions";
 
 export default function Filters() {
-    const { setSidebar } = useUtil();
+    const setSidebar = useUtil((s) => s.setSidebar);
+    const user = useUser((s) => s.user);
 
     return (
         <div className="flex flex-col items-center gap-2 border-r px-2">
-            <div className="flex h-18.5 items-center justify-center">
+            <div className="flex flex-col items-center gap-4 py-4">
+                <p>{getInitials(user?.name ?? "User")}</p>
+                <div className="bg-primary/10 size-12 rounded-full border p-2">
+                    <div className="relative size-full overflow-hidden rounded-full">
+                        {user?.mainAvatarUrl && <Image src={user.mainAvatarUrl} fill alt={user.name} unoptimized />}
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center justify-center">
                 <Button onClick={() => setSidebar(true)} variant={"ghost"} size={"icon"}>
                     <Menu className="size-5" />
                 </Button>

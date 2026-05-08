@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import Loader from "@/components/loader";
-import type { BaseProp } from "@/components/auth/form/forgot-password";
+import { BaseProp } from "@/hooks/use-forgot-password";
 
 interface EmailProp extends BaseProp {
     email: string;

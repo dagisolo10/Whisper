@@ -26,24 +26,15 @@ const useMessage = create<MessageStore>((set) => ({
         set((state) => {
             const exists = state.messages.some((m) => m.id === message.id);
             if (exists) return state;
-            return { messages: [...state.messages, message] };
+            return { messages: [message, ...state.messages] };
         }),
 
     sendMessage: async (payload, token) => {
         try {
             const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-
             const res = await api.post<MessageSendResponse>("/message/send", payload, auth);
             const data = res.data;
             if (!data.success) throw new Error(data.error);
-
-            const newMessage = data.data.message;
-
-            set((state) => {
-                const exists = state.messages.some((msg) => msg.id === newMessage.id);
-                if (exists) return state;
-                return { messages: [newMessage, ...state.messages] };
-            });
         } catch (err) {
             console.error("Error sending message", err);
         }
@@ -52,14 +43,9 @@ const useMessage = create<MessageStore>((set) => ({
     editMessage: async (payload, token) => {
         try {
             const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-
             const res = await api.patch<MessageResponse>(`/message/${payload.id}`, payload, auth);
             const data = res.data;
             if (!data.success) throw new Error(data.error);
-
-            const updatedMessage = data.data;
-
-            set((state) => ({ messages: [...state.messages.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))] }));
         } catch (err) {
             console.error("Error editing message", err);
         }
@@ -68,14 +54,9 @@ const useMessage = create<MessageStore>((set) => ({
     deleteMessage: async (messageId, token) => {
         try {
             const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-
             const res = await api.delete<MessageResponse>(`/message/${messageId}`, auth);
             const data = res.data;
             if (!data.success) throw new Error(data.error);
-
-            const deletedMessage = data.data;
-
-            set((state) => ({ messages: [...state.messages.filter((msg) => msg.id !== deletedMessage.id)] }));
         } catch (err) {
             console.error("Error deleting message", err);
         }

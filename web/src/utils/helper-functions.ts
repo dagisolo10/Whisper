@@ -54,3 +54,12 @@ export const formatDate = (date: string | Date, context: DateContext) => {
 
     return d.toLocaleDateString();
 };
+
+export const getInitials = (name: string) =>
+    name
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((letter) => letter[0].toUpperCase())
+        .join("");
