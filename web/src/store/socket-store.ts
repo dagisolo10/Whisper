@@ -4,6 +4,7 @@ import useMessage from "./message-store";
 import { create } from "zustand";
 import { io, Socket } from "socket.io-client";
 import useAuthStore from "@/store/auth-store";
+import showNotification from "@/lib/notification";
 import { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-events";
 
 type WebSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -68,34 +69,19 @@ const useSocket = create<SocketStore>((set, get) => ({
 
             if (message.roomId === activeRoomId) {
                 useMessage.getState().addMessage(message);
-                if (message.senderId !== user?.id) socket.emit("markAsRead", roomId);
+                if (message.senderId !== user?.id) {
+                    socket.emit("markAsRead", roomId);
+                }
             }
 
             if (message.roomId !== activeRoomId && message.senderId !== user?.id) {
                 const permission = await Notification.requestPermission();
 
                 if (permission === "granted") {
-                    const senderName = message.user.name ?? "Someone";
-
-                    let notificationBody = "";
-                    if (message.messageType === "Text") {
-                        notificationBody = message.textContent || "Sent a message";
-                    } else if (message.messageType === "Image") {
-                        const imgCount = message.imageUrls?.length || 0;
-                        notificationBody = imgCount > 1 ? `📷 Sent ${imgCount} images` : "📷 Sent an image";
-                    }
-
-                    const notification = new Notification(`New message from ${senderName}`, {
-                        silent: false,
-                        tag: message.roomId,
-                        body: notificationBody,
-                        requireInteraction: true,
-                        icon: message.user?.mainAvatarUrl || "/images/coder.jpg",
-                    });
-
-                    notification.onclick = () => {
-                        window.focus();
-                    };
+                    showNotification(message);
+                } else if (Notification.permission !== "denied") {
+                    const permission = await Notification.requestPermission();
+                    if (permission === "granted") showNotification(message);
                 }
             }
 

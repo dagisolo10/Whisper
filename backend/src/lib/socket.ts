@@ -122,15 +122,21 @@ export default function initializeSocket(server: HttpServer) {
 
         socket.on("sendMessage", async (newMessage: Message, roomId: string) => {
             if (socket.data.userId !== newMessage.senderId) return;
+            try {
+                const room = await prisma.room.findUnique({ where: { id: roomId }, include: { members: true } });
 
-            const room = await prisma.room.findUnique({ where: { id: roomId }, include: { members: true } });
+                io.to(roomId).emit("newMessage", newMessage, roomId);
 
-            io.to(roomId).emit("newMessage", newMessage, roomId);
+                if (room) {
+                    const isSenderMember = room.members.some((m) => m.userId === socket.data.userId);
+                    if (!isSenderMember) return;
 
-            if (room) {
-                room.members.forEach((member) => {
-                    io.to(`user_${member.userId}`).emit("newMessage", newMessage, roomId);
-                });
+                    room.members.forEach((member) => {
+                        io.to(`user_${member.userId}`).emit("newMessage", newMessage, roomId);
+                    });
+                }
+            } catch (error) {
+                console.error(`sendMessage socket error for room ${roomId}:`, error);
             }
         });
 
