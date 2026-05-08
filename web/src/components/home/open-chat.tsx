@@ -80,6 +80,7 @@ export default function OpenChatPanel() {
         .map((letter) => letter[0])
         .join("");
 
+    // TODO: socket check
     const isOnline = !true;
 
     const canSend = (!isSending && message.trim().length > 0) || (!isSending && pendingImages.length > 0);
@@ -179,7 +180,7 @@ export default function OpenChatPanel() {
                 <div className="flex items-center gap-4">
                     <div>
                         {partner.mainAvatarUrl ? (
-                            <Image className="size-8 rounded-full object-cover" width={32} height={32} src={resolveMediaUrl(partner.mainAvatarUrl!) ?? partner.mainAvatarUrl!} alt={partner.name} unoptimized />
+                            <Image className="size-8 rounded-full object-cover" width={32} height={32} src={resolveMediaUrl(partner.mainAvatarUrl) ?? partner.mainAvatarUrl} alt={partner.name} unoptimized />
                         ) : (
                             <div className={cn("border-primary flex size-8 shrink-0 items-center justify-center rounded-full border bg-linear-to-br text-xs font-semibold text-white shadow-sm")}>{avatar}</div>
                         )}

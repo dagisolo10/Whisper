@@ -29,7 +29,7 @@ const useRoom = create<RoomStore>((set) => ({
             const res = await api.get<RoomsResponse>("/room/list", auth);
             const data = res.data;
             if (!data.success) throw new Error(res.data.error);
-            const filteredData: Room[] = data.data.map((data) => ({ ...data, messages: [] }));
+            const filteredData: Room[] = data.data.map((room) => ({ ...room, messages: [] }));
 
             set({ rooms: filteredData });
         } catch (err) {
@@ -69,7 +69,10 @@ const useRoom = create<RoomStore>((set) => ({
                 socket.emit("joinRoom", roomId);
             }
 
-            set({ currentRoomId: roomId, activeRoom: data.data });
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { messages, ...roomWithoutMessages } = data.data;
+
+            set({ currentRoomId: roomId, activeRoom: roomWithoutMessages as Room });
             useMessage.getState().setMessages(data.data.messages || []);
         } catch (err) {
             console.error("Error fetching conversation", err);

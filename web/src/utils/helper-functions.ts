@@ -44,7 +44,7 @@ export const formatDate = (date: string | Date, context: DateContext) => {
         const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
         if (isToday) {
-            return d.toLocaleString("en-US", { hour: "2-digit", minute: "2-digit" });
+            return d.toLocaleString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
         }
         if (diffInDays < 7) {
             return d.toLocaleString("en-US", { weekday: "short" });

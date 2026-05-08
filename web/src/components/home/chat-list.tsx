@@ -9,18 +9,17 @@ import useUser from "@/store/auth-store";
 import { useEffect } from "react";
 import Image from "next/image";
 import { formatDate } from "@/utils/helper-functions";
-import useMessage from "@/store/message-store";
 import { resolveMediaUrl } from "@/lib/media";
 
 export default function ChatList() {
     const pathname = usePathname();
-    const { messages } = useMessage();
     const { rooms, getRooms } = useRoom();
     const { lastToken, user } = useUser();
 
+    // TODO: rely on socket instead of full refetch
     useEffect(() => {
         getRooms(lastToken ?? "");
-    }, [getRooms, lastToken, messages.length]);
+    }, [getRooms, lastToken]);
 
     return (
         <div className="h-screen border-r">

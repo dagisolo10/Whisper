@@ -7,26 +7,26 @@ import { useAuth } from "@clerk/nextjs";
 
 export default function AuthWrapper({ children }: { children: ReactNode }) {
     const { user, loading, getUser } = useUser();
-    const { isLoaded, getToken } = useAuth();
+    const { isLoaded, getToken, isSignedIn } = useAuth();
 
     useEffect(() => {
-        if (!isLoaded) return;
+        if (!isLoaded || !isSignedIn) return;
         async function fetchUser() {
             const token = await getToken();
-            getUser(token ?? "");
+            await getUser(token ?? "");
         }
 
         fetchUser();
-    }, [getToken, getUser, isLoaded]);
+    }, [getToken, getUser, isLoaded, isSignedIn]);
 
-    if (loading)
+    if (!isLoaded || (isSignedIn && loading))
         return (
             <div className="flex h-screen w-full items-center justify-center bg-zinc-950">
                 <Loader loading={loading} />
             </div>
         );
 
-    if (!user) return <div className="flex h-screen items-center justify-center">Error loading profile...</div>;
+    if (isSignedIn && !user) return <div className="flex h-screen items-center justify-center">Error loading profile...</div>;
 
     return children;
 }

@@ -29,17 +29,17 @@ export default function ChatCard({ message }: { message: Message }) {
             <div className="max-w-[clamp(30rem,60%,70%)] space-y-2">
                 <div>
                     {images.length > 0 && (
-                        <div className={cn(images.length === 1 ? "grid-cols-1" : "grid-cols-2", "grid gap-2 overflow-hidden rounded-t-lg")}>
-                            {galleryImages.map((image, index) => (
-                                <ImageCarousel key={image.id} galleryImages={galleryImages} initialIndex={index}>
-                                    {({ openPreview }) => (
-                                        <button type="button" onClick={() => openPreview(index)} className={cn(images.length === 1 ? "max-w-md" : "max-w-xs", "cursor-zoom-in overflow-hidden rounded-2xl")}>
+                        <ImageCarousel galleryImages={galleryImages}>
+                            {({ openPreview }) => (
+                                <div className={cn(images.length === 1 ? "grid-cols-1" : "grid-cols-2", "grid gap-2 overflow-hidden rounded-t-lg")}>
+                                    {galleryImages.map((image, index) => (
+                                        <button key={image.id} type="button" onClick={() => openPreview(index)} className={cn(images.length === 1 ? "max-w-md" : "max-w-xs", "cursor-zoom-in overflow-hidden rounded-2xl")}>
                                             <Image className={cn(images.length === 1 ? "h-auto max-h-80 w-full" : "h-48 w-full", "object-cover")} src={image.src} width={1024} height={1024} alt={image.alt} unoptimized />
                                         </button>
-                                    )}
-                                </ImageCarousel>
-                            ))}
-                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </ImageCarousel>
                     )}
 
                     {text && (
