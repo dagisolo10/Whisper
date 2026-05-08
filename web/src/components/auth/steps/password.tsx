@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import Loader from "@/components/loader";
-import type { BaseProp } from "@/components/auth/form/forgot-password";
+import { BaseProp } from "@/hooks/use-forgot-password";
 
 interface PasswordProp extends BaseProp {
     password: string;
@@ -19,17 +19,7 @@ interface PasswordProp extends BaseProp {
     setConfirmPassword: Dispatch<SetStateAction<string>>;
 }
 
-export default function PasswordStep({
-    step,
-    error,
-    disabled,
-    password,
-    setPassword,
-    confirmPassword,
-    updatingPassword,
-    onUpdatePassword,
-    setConfirmPassword,
-}: PasswordProp) {
+export default function PasswordStep({ step, error, disabled, password, setPassword, confirmPassword, updatingPassword, onUpdatePassword, setConfirmPassword }: PasswordProp) {
     if (step !== "password") return null;
 
     return (

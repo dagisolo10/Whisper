@@ -25,8 +25,14 @@ export default function initializeSocket(server: HttpServer) {
                 return next(new HttpError(401, "Unauthorized: missing socket token"));
             }
 
-            const payload = await verifyToken(token, { secretKey: ENV.CLERK_SECRET_KEY });
-            const userId = typeof payload?.sub === "string" ? payload.sub : undefined;
+            let userId;
+
+            if (process.env.NODE_ENV === "development") {
+                userId = token;
+            } else {
+                const payload = await verifyToken(token, { secretKey: ENV.CLERK_SECRET_KEY });
+                userId = typeof payload?.sub === "string" ? payload.sub : undefined;
+            }
 
             if (!userId) {
                 return next(new HttpError(401, "Unauthorized: invalid socket token"));
@@ -64,6 +70,7 @@ export default function initializeSocket(server: HttpServer) {
             }
 
             socket.join(roomId);
+            socket.emit("messageRead", roomId);
             console.log(`User ${socket.id} joined room ${roomId}`);
         });
 
@@ -83,6 +90,28 @@ export default function initializeSocket(server: HttpServer) {
 
             socket.leave(roomId);
             console.log(`User ${socket.id} left room ${roomId}`);
+        });
+
+        socket.on("markAsRead", async (roomId: string) => {
+            const userId = socket.data.userId;
+            if (!userId) {
+                socket.emit("roomJoinError", roomId, "Unauthorized: missing socket user id");
+                return;
+            }
+
+            const isMember = await prisma.room.findFirst({ where: { id: roomId, members: { some: { userId } } }, select: { id: true } });
+
+            if (!isMember) {
+                socket.emit("roomJoinError", roomId, "Unauthorized: not a member of the room");
+                return;
+            }
+
+            await prisma.message.updateMany({
+                where: { roomId, read: false, senderId: { not: userId } },
+                data: { read: true },
+            });
+
+            io.to(roomId).emit("messageRead", roomId);
         });
 
         socket.on("sendMessage", (newMessage: Message, roomId: string) => {

@@ -3,64 +3,35 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ChatCard from "@/components/home/chat-card";
-import { Info, Paperclip, Phone, SendHorizontal, Smile, Video, X, MessageSquareDashed, Hand, Loader2, Images, Plus } from "lucide-react";
-import useMessage from "@/store/message-store";
-import useRoom from "@/store/room-store";
-import { useRouter } from "next/navigation";
-import useUser from "@/store/auth-store";
+import { Info, Paperclip, Phone, SendHorizontal, Smile, Video, Loader2, Images } from "lucide-react";
 import Image from "next/image";
-import { formatDate } from "@/utils/helper-functions";
-import { ChangeEvent, SyntheticEvent, useEffect, useRef, useState } from "react";
-import { z } from "zod";
-import { toast } from "sonner";
-import { MessagePayload } from "@/types/payloads";
+import { formatDate, getInitials } from "@/utils/helper-functions";
 import { resolveMediaUrl } from "@/lib/media";
 import { ImageCarousel } from "../image-carousel";
-
-const imageSchema = z
-    .instanceof(File)
-    .refine((file) => file.type.startsWith("image/"), "Please select an image file")
-    .refine((file) => file.size <= 10 * 1024 * 1024, "Image size must be 10MB or less");
-
-const imageListSchema = z.array(imageSchema).min(1, "Please select at least one image").max(10, "You can upload up to 10 images at a time");
-
-type PendingImage = {
-    file: File;
-    previewUrl: string;
-    id: string;
-};
+import OnlineIndicator from "./indicators/online-indicator";
+import TypingIndicator from "./indicators/typing-indicator";
+import useChat from "@/hooks/use-chat";
+import ImageOptions from "./image-options";
+import NoMessages from "./empty states/no-message";
 
 export default function OpenChatPanel() {
-    const { user, lastToken } = useUser();
-    const { activeRoom } = useRoom();
-    const { messages, sendMessage } = useMessage();
-
-    const router = useRouter();
-    const [isSending, setIsSending] = useState(false);
-    const [message, setMessage] = useState("");
-    const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
-
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const imageInputRef = useRef<HTMLInputElement>(null);
-    const pendingImagesRef = useRef<PendingImage[]>([]);
-
-    useEffect(() => {
-        if (!activeRoom === null) router.replace("/");
-    }, [router, activeRoom]);
-
-    useEffect(() => {
-        if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: "smooth" });
-    }, [messages.length]);
-
-    useEffect(() => {
-        pendingImagesRef.current = pendingImages;
-    }, [pendingImages]);
-
-    useEffect(() => {
-        return () => {
-            pendingImagesRef.current.forEach((image) => URL.revokeObjectURL(image.previewUrl));
-        };
-    }, []);
+    const {
+        user,
+        message,
+        isTyping,
+        messages,
+        scrollRef,
+        isSending,
+        activeRoom,
+        onlineUsers,
+        handleTyping,
+        imageInputRef,
+        pendingImages,
+        handleImageSelect,
+        handleSendMessage,
+        removePendingImage,
+        clearPendingImages,
+    } = useChat();
 
     if (activeRoom === undefined || activeRoom === null) {
         return (
@@ -75,129 +46,50 @@ export default function OpenChatPanel() {
 
     if (!partner) return null;
 
-    const avatar = partner.name
-        .split(" ")
-        .map((letter) => letter[0])
-        .join("");
+    const avatar = getInitials(partner.name);
 
-    // TODO: socket check
-    const isOnline = !true;
-
+    const isOnline = onlineUsers.includes(partner.id);
     const canSend = (!isSending && message.trim().length > 0) || (!isSending && pendingImages.length > 0);
 
-    function appendImages(files: File[]) {
-        const combinedFiles = [...pendingImages.map((image) => image.file), ...files];
-        const result = imageListSchema.safeParse(combinedFiles);
-
-        if (!result.success) {
-            toast.error("Validation Error", {
-                description: () => (
-                    <div>
-                        {result.error.errors.map((err, key) => (
-                            <p key={key}>{err.message}</p>
-                        ))}
-                    </div>
-                ),
-            });
-            return false;
-        }
-
-        const nextImages = files.map((file) => ({
-            file,
-            previewUrl: URL.createObjectURL(file),
-            id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
-        }));
-
-        setPendingImages((current) => [...current, ...nextImages]);
-        return true;
-    }
-
-    function removePendingImage(id: string) {
-        setPendingImages((current) => {
-            const imageToRemove = current.find((image) => image.id === id);
-            if (imageToRemove) URL.revokeObjectURL(imageToRemove.previewUrl);
-
-            const nextImages = current.filter((image) => image.id !== id);
-            return nextImages;
-        });
-    }
-
-    function clearPendingImages() {
-        pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
-        setPendingImages([]);
-    }
-
-    async function handleSendMessage(e: SyntheticEvent<HTMLFormElement>) {
-        e.preventDefault();
-        if (!activeRoom || isSending || (!message.trim() && pendingImages.length === 0)) return;
-
-        setIsSending(true);
-
-        let sent = false;
-
-        try {
-            const trimmedMessage = message.trim();
-
-            if (pendingImages.length > 0) {
-                const formData = new FormData();
-                pendingImages.forEach((image) => formData.append("files", image.file));
-                formData.append("messageType", "Image");
-                formData.append("roomId", activeRoom.id);
-                if (trimmedMessage) {
-                    formData.append("textContent", trimmedMessage);
-                }
-                await sendMessage(formData, lastToken ?? "");
-                clearPendingImages();
-                sent = true;
-            } else {
-                const payload: MessagePayload = {
-                    textContent: trimmedMessage,
-                    messageType: "Text",
-                    roomId: activeRoom.id,
-                };
-                await sendMessage(payload, lastToken ?? "");
-                sent = true;
-            }
-        } catch (error) {
-            console.error("Error sending message", error);
-            toast.error("Couldn't send message", { description: "Please try again." });
-        } finally {
-            setIsSending(false);
-            if (sent) setMessage("");
-        }
-    }
-
-    async function handleImageSelect(e: ChangeEvent<HTMLInputElement>) {
-        const selectedFiles = Array.from(e.target.files ?? []);
-        if (!selectedFiles.length || !activeRoom || isSending) return;
-        appendImages(selectedFiles);
-        e.target.value = "";
-    }
-
     return (
-        <section className="hidden h-screen min-w-0 flex-1 flex-col xl:flex">
+        <section className="flex h-screen flex-col">
             <header className="border-border bg-background/95 flex items-center justify-between border-b px-6 py-4 backdrop-blur">
                 <div className="flex items-center gap-4">
-                    <div>
+                    <div className="relative">
                         {partner.mainAvatarUrl ? (
-                            <Image className="size-8 rounded-full object-cover" width={32} height={32} src={resolveMediaUrl(partner.mainAvatarUrl) ?? partner.mainAvatarUrl} alt={partner.name} unoptimized />
+                            <Image
+                                className="size-8 rounded-full object-cover"
+                                width={32}
+                                height={32}
+                                src={resolveMediaUrl(partner.mainAvatarUrl) ?? partner.mainAvatarUrl}
+                                alt={partner.name}
+                                unoptimized
+                            />
                         ) : (
-                            <div className={cn("border-primary flex size-8 shrink-0 items-center justify-center rounded-full border bg-linear-to-br text-xs font-semibold text-white shadow-sm")}>{avatar}</div>
+                            <div
+                                className={cn(
+                                    "border-primary flex size-8 shrink-0 items-center justify-center rounded-full border bg-linear-to-br text-xs font-semibold text-white shadow-sm",
+                                )}
+                            >
+                                {avatar}
+                            </div>
                         )}
-                        {isOnline && <div className="absolute right-0 bottom-0 size-1.5 rounded-full bg-emerald-500" />}
+                        <OnlineIndicator isOnline={isOnline} />
                     </div>
 
                     <div>
                         <h2 className="font-jakarta text-sm font-semibold">{partner.name}</h2>
-                        <p className={cn(isOnline ? "text-emerald-500" : "text-muted-foreground", "text-xs font-semibold")}>{isOnline ? "Online" : `Last seen ${formatDate(partner.lastOnlineAt, "lastOnline")}`}</p>
+                        {isTyping ? (
+                            <TypingIndicator isTyping={isTyping} />
+                        ) : (
+                            <p className={cn(isOnline ? "text-emerald-500" : "text-muted-foreground", "text-xs font-semibold")}>
+                                {isOnline ? "online" : `Last seen ${formatDate(partner.lastOnlineAt, "lastOnline")}`}
+                            </p>
+                        )}
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="rounded-full" aria-label="Close chat" onClick={() => router.push("/")}>
-                        <X className="size-4" />
-                    </Button>
-
                     <Button variant="ghost" size="icon" className="rounded-full" aria-label="Phone call">
                         <Phone className="size-4" />
                     </Button>
@@ -215,10 +107,16 @@ export default function OpenChatPanel() {
                     <div className="mx-auto flex w-full max-w-4xl flex-col-reverse gap-4 p-6">
                         <div ref={scrollRef} />
                         {messages.map((message, index) => {
-                            const isNewDay = index === messages.length - 1 || new Date(message.createdAt).toDateString() !== new Date(messages[index + 1].createdAt).toDateString();
+                            const isNewDay =
+                                index === messages.length - 1 ||
+                                new Date(message.createdAt).toDateString() !== new Date(messages[index + 1].createdAt).toDateString();
                             return (
                                 <div key={message.id}>
-                                    {isNewDay && <p className="m-auto mb-4 w-fit rounded-full bg-white/10 px-4 py-1 text-xs">{formatDate(message.createdAt, "daySeparator")}</p>}
+                                    {isNewDay && (
+                                        <p className="m-auto mb-4 w-fit rounded-full bg-white/10 px-4 py-1 text-xs">
+                                            {formatDate(message.createdAt, "daySeparator")}
+                                        </p>
+                                    )}
                                     <ChatCard message={message} />
                                 </div>
                             );
@@ -238,30 +136,21 @@ export default function OpenChatPanel() {
                             alt: image.file.name || `Selected image ${index + 1}`,
                         }))}
                         renderActions={({ activeIndex, closePreview }) => (
-                            <>
-                                <Button type="button" variant="outline" size="sm" onClick={() => imageInputRef.current?.click()}>
-                                    <Plus className="size-4" />
-                                    Add more
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-white hover:bg-white/10 hover:text-white"
-                                    onClick={() => {
-                                        const currentId = pendingImages[activeIndex]?.id;
-                                        if (!currentId) return;
-                                        removePendingImage(currentId);
-                                        if (pendingImages.length === 1) closePreview();
-                                    }}
-                                >
-                                    Remove
-                                </Button>
-                            </>
+                            <ImageOptions
+                                imageInputRef={imageInputRef}
+                                pendingImages={pendingImages}
+                                activeIndex={activeIndex}
+                                removePendingImage={removePendingImage}
+                                closePreview={closePreview}
+                            />
                         )}
                     >
                         {({ openPreview }) => (
-                            <button type="button" className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left transition hover:bg-white/10" onClick={() => openPreview()}>
+                            <button
+                                type="button"
+                                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left transition hover:bg-white/10"
+                                onClick={() => openPreview()}
+                            >
                                 <div className="bg-primary/15 flex size-9 items-center justify-center rounded-lg">
                                     <Images className="text-primary size-4" />
                                 </div>
@@ -289,7 +178,7 @@ export default function OpenChatPanel() {
                     <Paperclip className="size-4" />
                 </Button>
 
-                <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Message" className="border-none" disabled={isSending} />
+                <Input value={message} onChange={handleTyping} placeholder="Message" className="border-none" disabled={isSending} />
 
                 <Button type="button" variant="outline" size="icon" aria-label="Insert emoji" disabled={isSending}>
                     <Smile className="size-4" />
@@ -300,39 +189,5 @@ export default function OpenChatPanel() {
                 </Button>
             </form>
         </section>
-    );
-}
-
-function NoMessages({ roomName }: { roomName: string }) {
-    return (
-        <div className="flex flex-1 flex-col items-center justify-center">
-            <div>
-                <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-                    <div className="bg-accent/20 mb-4 flex size-20 items-center justify-center rounded-full ring-1 ring-white/10">
-                        <MessageSquareDashed className="text-muted-foreground size-10 animate-pulse" />
-                    </div>
-
-                    <h3 className="font-jakarta text-xl font-semibold text-white">Quiet in here...</h3>
-                    <p className="text-muted-foreground mt-2 max-w-62.5 text-sm">
-                        No whispers yet.{" "}
-                        <span className="text-white">
-                            Say hello to <br />
-                            {roomName}{" "}
-                        </span>
-                        <br />
-                        to start the conversation!
-                    </p>
-                </div>
-
-                <div className="flex flex-1 flex-col items-center justify-center gap-4">
-                    <div className="bg-primary/20 flex size-12 rotate-3 items-center justify-center rounded-2xl">
-                        <Hand className="text-primary size-6" />
-                    </div>
-                    <Button variant={"outline"} aria-label={`Wave hello to ${roomName}`} className="rounded-full px-4 text-sm font-semibold transition hover:scale-105 active:scale-95">
-                        👋 Wave Hello
-                    </Button>
-                </div>
-            </div>
-        </div>
     );
 }

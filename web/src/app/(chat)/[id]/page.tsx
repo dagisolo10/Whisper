@@ -9,8 +9,8 @@ export default function ChatPage() {
     const params = useParams();
     const roomId = params.id as string;
 
-    const { lastToken } = useUser();
-    const { getConversation } = useRoom();
+    const lastToken = useUser((s) => s.lastToken);
+    const getConversation = useRoom((s) => s.getConversation);
 
     useEffect(() => {
         getConversation(roomId, lastToken ?? "");

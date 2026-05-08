@@ -1,95 +1,16 @@
 "use client";
 
-import { SyntheticEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
-import { useClerk, useSignUp } from "@clerk/nextjs";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
-import { getClerkErrorMessage } from "@/lib/clerk-errors";
 import Loader from "@/components/loader";
-import { toast } from "sonner";
-import { z } from "zod";
-
-const signUpSchema = z.object({
-    firstName: z.string().min(3, "First name must be at least 3 characters"),
-    lastName: z.string().optional(),
-    email: z.string().email("Invalid email address"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-});
+import useSignInUp from "@/hooks/use-sign-in-up";
 
 export default function SignUpForm() {
-    const { signUp } = useSignUp();
-    const { loaded: isLoaded } = useClerk();
-
-    const router = useRouter();
-
-    const [pending, setPending] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [passwordVisible, setPasswordVisible] = useState(false);
-
-    const handleSignUp = async (event: SyntheticEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
-        if (!isLoaded) return;
-
-        const formData = new FormData(event.currentTarget);
-        const rawData = Object.fromEntries(formData);
-        const result = signUpSchema.safeParse(rawData);
-
-        if (!result.success) {
-            const errorMsgs = result.error.errors;
-            toast.error("Validation Error", {
-                description: () => (
-                    <div>
-                        {errorMsgs.map((err, key) => (
-                            <p key={key}>• {err.message}</p>
-                        ))}
-                    </div>
-                ),
-            });
-            return;
-        }
-
-        const { email, password, firstName, lastName } = result.data;
-
-        try {
-            setPending(true);
-            setError(null);
-
-            await signUp.password({ firstName, lastName, emailAddress: email, password });
-
-            if (signUp.status === "complete") {
-                await signUp.finalize({
-                    navigate: async ({ session, decorateUrl }) => {
-                        if (session?.currentTask) return;
-                        const url = decorateUrl("/");
-                        if (url.startsWith("http")) {
-                            window.location.href = url;
-                        } else {
-                            router.push(url);
-                        }
-                    },
-                });
-                return;
-            }
-
-            if (signUp.status === "missing_requirements") {
-                await signUp.verifications.sendEmailCode();
-                router.push("/verification?mode=sign-up");
-                return;
-            }
-
-            setError(`Sign-up isn't complete yet (status: ${signUp.status ?? "unknown"}). Please try again.`);
-        } catch (err) {
-            setError(getClerkErrorMessage(err, "Unable to create your account."));
-        } finally {
-            setPending(false);
-        }
-    };
+    const { error, pending, isLoaded, handleSignUp, passwordVisible, setPasswordVisible } = useSignInUp();
 
     return (
         <form onSubmit={handleSignUp} className="w-full">

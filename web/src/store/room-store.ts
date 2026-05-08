@@ -10,7 +10,7 @@ import { ConversationRoomResponse, CreateRoomResponse, RoomsResponse } from "@/t
 interface RoomStore {
     rooms: Room[];
     activeRoom: Room | null;
-    currentRoomId: string | null;
+    activeRoomId: string | null;
 
     createRoom: (payload: RoomPayload, token: string) => Promise<void>;
 
@@ -21,7 +21,7 @@ interface RoomStore {
 const useRoom = create<RoomStore>((set) => ({
     rooms: [],
     activeRoom: null,
-    currentRoomId: null,
+    activeRoomId: null,
 
     getRooms: async (token) => {
         try {
@@ -54,7 +54,6 @@ const useRoom = create<RoomStore>((set) => ({
     getConversation: async (roomId, token) => {
         try {
             const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-
             const res = await api.get<ConversationRoomResponse>(`/room/${roomId}`, auth);
             const data = res.data;
             if (!data.success) throw new Error(data.error);
@@ -62,7 +61,7 @@ const useRoom = create<RoomStore>((set) => ({
             const socket = useSocket.getState().socket;
 
             if (socket) {
-                const previousRoomId = useRoom.getState().currentRoomId;
+                const previousRoomId = useRoom.getState().activeRoomId;
                 if (previousRoomId && previousRoomId !== roomId) {
                     socket.emit("leaveRoom", previousRoomId);
                 }
@@ -72,7 +71,7 @@ const useRoom = create<RoomStore>((set) => ({
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { messages, ...roomWithoutMessages } = data.data;
 
-            set({ currentRoomId: roomId, activeRoom: roomWithoutMessages as Room });
+            set({ activeRoomId: roomId, activeRoom: roomWithoutMessages as Room });
             useMessage.getState().setMessages(data.data.messages || []);
         } catch (err) {
             console.error("Error fetching conversation", err);

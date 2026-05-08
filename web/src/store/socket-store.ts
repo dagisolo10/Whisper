@@ -1,3 +1,4 @@
+import useRoom from "./room-store";
 import useMessage from "./message-store";
 
 import { create } from "zustand";
@@ -58,23 +59,30 @@ const useSocket = create<SocketStore>((set, get) => ({
 
         socket.off("newMessage");
         socket.on("newMessage", (message, roomId) => {
+            const user = useAuthStore.getState().user;
+            const activeRoomId = useRoom.getState().activeRoomId;
             const currentMessages = useMessage.getState().messages;
 
             if (message.roomId !== roomId) return;
-
             const exists = currentMessages.some((msg) => msg.id === message.id);
             if (exists) return;
 
+            const inRoom = roomId === activeRoomId && message.senderId !== user?.id;
+
             useMessage.getState().addMessage(message);
+
+            if (inRoom) {
+                socket.emit("markAsRead", roomId);
+            }
         });
 
         socket.off("messageRead");
         socket.on("messageRead", (roomId) => {
             const user = useAuthStore.getState().user;
-            const updated = useMessage
+            const readMessages = useMessage
                 .getState()
                 .messages.map((msg) => (msg.roomId === roomId && msg.senderId === user?.id ? { ...msg, read: true } : msg));
-            useMessage.getState().setMessages(updated);
+            useMessage.getState().setMessages(readMessages);
         });
 
         socket.off("messageEdited");

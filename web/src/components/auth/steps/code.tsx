@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import Loader from "@/components/loader";
-import type { BaseProp } from "@/components/auth/form/forgot-password";
+import { BaseProp } from "@/hooks/use-forgot-password";
 
 interface CodeProp extends BaseProp {
     code: string;
@@ -43,13 +43,7 @@ export default function CodeStep({ code, setCode, error, resending, verifying, d
             {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
             <div className="flex gap-3">
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="h-11 flex-1 border-white/10 bg-white/5 text-sm text-white hover:bg-white/10"
-                    onClick={onResend}
-                    disabled={disabledResend}
-                >
+                <Button type="button" variant="outline" className="h-11 flex-1 border-white/10 bg-white/5 text-sm text-white hover:bg-white/10" onClick={onResend} disabled={disabledResend}>
                     <Loader loading={resending} />
                     <p>Resend</p>
                 </Button>

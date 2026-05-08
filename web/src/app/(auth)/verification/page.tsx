@@ -1,126 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Mail, Star } from "lucide-react";
-import { useAuth, useClerk, useSignIn } from "@clerk/nextjs";
-import { useSignUp } from "@clerk/nextjs";
 
 import AuthPanel from "@/components/auth/ui/auth-panel";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getClerkErrorMessage } from "@/lib/clerk-errors";
 import FooterRedirect from "@/components/auth/ui/footer-redirect";
 import Loader from "@/components/loader";
+import useVerification from "@/hooks/use-verification";
 
 export default function Verification() {
-    const { signUp } = useSignUp();
-    const { signIn } = useSignIn();
-    const { isSignedIn } = useAuth();
-    const { loaded: clerkLoaded } = useClerk();
-
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const mode = searchParams.get("mode") || "sign-up";
-
-    const [code, setCode] = useState("");
-    const [resent, setResent] = useState(false);
-    const [verifying, setVerifying] = useState(false);
-    const [resending, setResending] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (isSignedIn) router.replace("/");
-    }, [isSignedIn, router]);
-
-    const handleVerify = async () => {
-        if (!clerkLoaded) return;
-        setVerifying(true);
-        setError(null);
-        setResent(false);
-
-        try {
-            if (mode === "sign-up" && signUp) {
-                await signUp.verifications.verifyEmailCode({ code });
-
-                if (signUp.status === "complete") {
-                    await signUp.finalize({
-                        navigate: async ({ session, decorateUrl }) => {
-                            if (session?.currentTask) return;
-                            const url = decorateUrl("/");
-                            if (url.startsWith("http")) {
-                                window.location.href = url;
-                            } else {
-                                router.push(url);
-                            }
-                        },
-                    });
-                    return;
-                }
-            } else if ((mode === "sign-in" || mode === "forgot-password") && signIn) {
-                await signIn.mfa.verifyEmailCode({ code });
-
-                if (signIn.status === "complete") {
-                    await signIn.finalize({
-                        navigate: async ({ session, decorateUrl }) => {
-                            if (session?.currentTask) return;
-                            const url = decorateUrl("/");
-                            if (url.startsWith("http")) {
-                                window.location.href = url;
-                            } else {
-                                router.push(url);
-                            }
-                        },
-                    });
-                    return;
-                }
-            }
-
-            setError("That verification code wasn’t accepted. Double-check it and try again.");
-        } catch (err) {
-            setError(getClerkErrorMessage(err, "Verification failed. Please check the code."));
-        } finally {
-            setVerifying(false);
-        }
-    };
-
-    const resendCode = async () => {
-        if (!clerkLoaded) return;
-        setResending(true);
-        setError(null);
-
-        try {
-            let didResend = false;
-
-            if (mode === "sign-up" && signUp) {
-                await signUp.verifications.sendEmailCode();
-                didResend = true;
-            } else if ((mode === "sign-in" || mode === "forgot-password") && signIn) {
-                await signIn.mfa.sendEmailCode();
-                didResend = true;
-            }
-
-            if (!didResend) {
-                setError("Invalid verification mode. Please restart the flow.");
-                return;
-            }
-
-            setResent(true);
-        } catch (err) {
-            setError(getClerkErrorMessage(err, "We couldn't resend the verification code."));
-        } finally {
-            setResending(false);
-        }
-    };
-
-    const getBackHref = () => {
-        if (mode === "sign-up") return "/sign-up";
-        if (mode === "forgot-password") return "/forgot-password";
-        return "/sign-in";
-    };
-
+    const { mode, code, error, signUp, signIn, resent, setCode, verifying, resending, resendCode, clerkLoaded, getBackHref, handleVerify } = useVerification();
     return (
         <AuthPanel
             title="Verify your identity"
@@ -141,9 +33,7 @@ export default function Verification() {
                         </div>
                         <div className="text-left">
                             <p className="text-sm font-semibold text-white">Verification code sent</p>
-                            <p className="text-sm text-zinc-400">
-                                {mode === "sign-up" ? signUp?.emailAddress : signIn?.identifier || "Check your inbox."}
-                            </p>
+                            <p className="text-sm text-zinc-400">{mode === "sign-up" ? signUp?.emailAddress : signIn?.identifier || "Check your inbox."}</p>
                         </div>
                     </div>
                 </div>
@@ -172,12 +62,7 @@ export default function Verification() {
 
                     {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
-                    <Button
-                        type="button"
-                        className="h-11 w-full text-sm font-semibold"
-                        onClick={handleVerify}
-                        disabled={verifying || !code || !clerkLoaded}
-                    >
+                    <Button type="button" className="h-11 w-full text-sm font-semibold" onClick={handleVerify} disabled={verifying || !code || !clerkLoaded}>
                         <Loader loading={verifying} />
                         <p>{verifying ? "Verifying..." : "Verify"}</p>
                         <ArrowRight className="size-4" />
