@@ -70,7 +70,6 @@ export default function initializeSocket(server: HttpServer) {
             }
 
             socket.join(roomId);
-            socket.emit("messageRead", roomId);
             console.log(`User ${socket.id} joined room ${roomId}`);
         });
 
