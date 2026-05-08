@@ -1,4 +1,4 @@
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { getClerkErrorMessage } from "@/lib/clerk-errors";

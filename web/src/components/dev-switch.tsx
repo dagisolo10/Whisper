@@ -32,6 +32,8 @@ export function DevUserSwitch() {
         window.location.reload();
     };
 
+    if (process.env.NEXT_PUBLIC_NO_AUTH !== "true") return null;
+
     return (
         <div className="space-y-4 overflow-hidden rounded-4xl border px-6 py-4" onClick={() => setShowAll((curr) => !curr)}>
             <div className="flex justify-between">

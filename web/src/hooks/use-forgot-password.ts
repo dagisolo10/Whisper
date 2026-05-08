@@ -137,7 +137,6 @@ export default function useForgotPassword() {
         } catch (err) {
             setError(getClerkErrorMessage(err, "We couldn't send a reset code to that email."));
         } finally {
-            setResending(false);
             setBusy(false);
         }
     };

@@ -44,7 +44,7 @@ export default function useChat() {
         const result = imageListSchema.safeParse(combinedFiles);
 
         if (!result.success) {
-            return false;
+            return { ok: false as const, error: result.error.issues[0]?.message ?? "Invalid image selection" };
         }
 
         const nextImages = files.map((file) => ({
@@ -54,7 +54,7 @@ export default function useChat() {
         }));
 
         setPendingImages((current) => [...current, ...nextImages]);
-        return true;
+        return { ok: true as const };
     }
 
     function removePendingImage(id: string) {
@@ -131,7 +131,8 @@ export default function useChat() {
     async function handleImageSelect(e: ChangeEvent<HTMLInputElement>) {
         const selectedFiles = Array.from(e.target.files ?? []);
         if (!selectedFiles.length || !activeRoom || isSending) return;
-        appendImages(selectedFiles);
+        const result = appendImages(selectedFiles);
+        if (!result.ok) toast.error(result.error);
         e.target.value = "";
     }
 
@@ -175,7 +176,7 @@ export default function useChat() {
     }, [activeRoom, typingUsers, user?.id]);
 
     useEffect(() => {
-        if (!activeRoom === null) router.replace("/");
+        if (activeRoom === null) router.replace("/");
     }, [router, activeRoom]);
 
     useEffect(() => {
@@ -189,8 +190,19 @@ export default function useChat() {
     useEffect(() => {
         return () => {
             pendingImagesRef.current.forEach((image) => URL.revokeObjectURL(image.previewUrl));
-            if (socket && user && activeRoom) socket.emit("stopTyping", activeRoom.id, user.id);
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!socket || !user || !activeRoom) return;
+        const roomId = activeRoom.id;
+        const userId = user.id;
+        return () => {
+            if (isTypingRef.current) {
+                socket.emit("stopTyping", roomId, userId);
+                isTypingRef.current = false;
+            }
         };
     }, [activeRoom, socket, user]);
 
