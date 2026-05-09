@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ChatCard from "@/components/home/chat-card";
-import { Info, Paperclip, Phone, SendHorizontal, Smile, Video, Loader2, Images } from "lucide-react";
+import { Info, Paperclip, Phone, SendHorizontal, Smile, Video, Loader2, Images, X } from "lucide-react";
 import Image from "next/image";
 import { formatDate, getInitials } from "@/utils/helper-functions";
 import { resolveMediaUrl } from "@/lib/media";
@@ -13,6 +13,7 @@ import TypingIndicator from "./indicators/typing-indicator";
 import useChat from "@/hooks/use-chat";
 import ImageOptions from "./image-options";
 import NoMessages from "./empty states/no-message";
+import { useRouter } from "next/navigation";
 
 export default function OpenChatPanel() {
     const {
@@ -32,6 +33,8 @@ export default function OpenChatPanel() {
         removePendingImage,
         clearPendingImages,
     } = useChat();
+
+    const router = useRouter();
 
     if (!activeRoom) return null;
 
@@ -83,6 +86,9 @@ export default function OpenChatPanel() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" className="rounded-full" aria-label="Close chat" onClick={() => router.push("/")}>
+                        <X className="size-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="rounded-full" aria-label="Phone call">
                         <Phone className="size-4" />
                     </Button>

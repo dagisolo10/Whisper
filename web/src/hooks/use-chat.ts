@@ -112,12 +112,12 @@ export default function useChat() {
         }
     }
 
-    async function sendWave(recipientId: string) {
+    async function sendWave(partnerId: string) {
         try {
             const payload: MessagePayload = {
-                textContent: "Hi",
+                textContent: "Hi 👋",
                 messageType: "Text",
-                recipientId,
+                partnerId,
             };
             await sendMessage(payload, lastToken ?? "");
         } catch (err) {

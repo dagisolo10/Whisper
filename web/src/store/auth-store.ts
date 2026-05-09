@@ -9,17 +9,17 @@ interface AuthStore {
     user: User | null;
 
     loading: boolean;
+    searching: boolean;
     error: string | null;
 
     lastToken: string | null;
 
-    searchResult: User[];
     abortController: AbortController | null;
 
     setUser: (user: User) => void;
     getUser: (token: string) => Promise<void>;
 
-    searchUser: (query: string) => Promise<void>;
+    searchUser: (query: string, token: string) => Promise<User[]>;
     updateUser: (payload: UpdateUserPayload) => Promise<void>;
 
     clearUser: () => void;
@@ -28,11 +28,11 @@ interface AuthStore {
 
 const useUser = create<AuthStore>((set, get) => ({
     user: null,
-    loading: true,
     error: null,
+    loading: true,
     lastToken: null,
+    searching: false,
     abortController: null,
-    searchResult: [],
 
     setUser: (user: User) => {
         const controller = get().abortController;
@@ -44,25 +44,19 @@ const useUser = create<AuthStore>((set, get) => ({
         await fetchUser(token, set, get);
     },
 
-    searchUser: async (query) => {
-        const token = get().lastToken;
+    searchUser: async (query, token) => {
         const normalizedQuery = query.trim();
 
         if (!normalizedQuery) {
-            set({ searchResult: [] });
-            return;
+            return [];
         }
 
-        if (!token) {
-            set({ error: "Missing auth token.", loading: false });
-            return;
-        }
-
-        set({ loading: true });
+        set({ searching: true });
 
         try {
+            const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
             const res = await api.get<UserSearchResponse>("/user/search", {
-                headers: { Authorization: `Bearer ${token}` },
+                ...auth,
                 params: {
                     name: normalizedQuery,
                     username: normalizedQuery,
@@ -73,10 +67,12 @@ const useUser = create<AuthStore>((set, get) => ({
 
             if (!data.success) throw new Error(res.data.error);
 
-            set({ searchResult: data.data, loading: false });
+            return data.data;
         } catch (err) {
             console.error("Error while searching user", err);
-            set({ searchResult: [], loading: false });
+            return [];
+        } finally {
+            set({ searching: false });
         }
     },
 
@@ -121,7 +117,6 @@ const useUser = create<AuthStore>((set, get) => ({
             error: null,
             abortController: null,
             lastToken: null,
-            searchResult: [],
         });
     },
 }));
@@ -166,7 +161,10 @@ async function fetchUser(token: string, set: (partial: Partial<AuthStore>) => vo
         if (name === "CanceledError" || name === "AbortError") return;
 
         const backendError = isAxiosError(err) ? (err.response?.data as { error?: string } | undefined)?.error : undefined;
-        const message = isAxiosError(err) && err.code === "ECONNABORTED" ? "Request timed out. Please check your connection." : (backendError ?? (err instanceof Error ? err.message : "Error fetching user."));
+        const message =
+            isAxiosError(err) && err.code === "ECONNABORTED"
+                ? "Request timed out. Please check your connection."
+                : (backendError ?? (err instanceof Error ? err.message : "Error fetching user."));
         console.error("Error fetching user in store", message);
 
         set({ user: null, loading: false, error: message, abortController: null });
