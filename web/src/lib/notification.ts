@@ -1,6 +1,9 @@
 import { Message } from "@/types/model";
 
 export default function showNotification(message: Message) {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+
     const senderName = message.user?.name || "Someone";
     let notificationBody = "";
 
@@ -9,6 +12,8 @@ export default function showNotification(message: Message) {
     } else if (message.messageType === "Image") {
         const imgCount = message.imageUrls?.length || 0;
         notificationBody = imgCount > 1 ? `📷 Sent ${imgCount} images` : "📷 Sent an image";
+    } else {
+        notificationBody = "Sent a message";
     }
 
     const notification = new Notification(`New message from ${senderName}`, {

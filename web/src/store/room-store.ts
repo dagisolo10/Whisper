@@ -18,7 +18,7 @@ interface RoomStore {
     getRooms: (token: string) => Promise<void>;
     updateRoomPreview: (message: Message) => void;
     getConversation: (roomId: string, token: string) => Promise<void>;
-    createRoom: (payload: RoomPayload, token: string) => Promise<void>;
+    createRoom: (payload: RoomPayload, token: string) => Promise<Room | undefined>;
 }
 
 const useRoom = create<RoomStore>((set) => ({
@@ -54,6 +54,7 @@ const useRoom = create<RoomStore>((set) => ({
             const populatedData: Room = { ...data.data, messages: [] };
 
             set((state) => ({ rooms: [populatedData, ...state.rooms] }));
+            return populatedData;
         } catch (err) {
             console.error("Error while creating room", err);
         }
