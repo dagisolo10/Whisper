@@ -85,12 +85,8 @@ const useSocket = create<SocketStore>((set, get) => ({
 
             if (message.roomId !== activeRoomId && message.senderId !== user?.id) {
                 const permission = await Notification.requestPermission();
-
                 if (permission === "granted") {
                     showNotification(message);
-                } else if (Notification.permission !== "denied") {
-                    const permission = await Notification.requestPermission();
-                    if (permission === "granted") showNotification(message);
                 }
             }
 

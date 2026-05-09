@@ -20,7 +20,7 @@ export default function useNoOpenChat() {
     const [result, setResult] = useState<User[]>([]);
 
     const requestIdRef = useRef(0);
-    const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     function handleQueryChange(e: ChangeEvent<HTMLInputElement>) {
         const value = e.target.value;
@@ -42,7 +42,6 @@ export default function useNoOpenChat() {
         }
     }
 
-    // TODO update the room list on the receiver end
     async function handleUserClick(partnerId: string) {
         if (isCreating) return;
         setIsCreating(true);
@@ -54,7 +53,8 @@ export default function useNoOpenChat() {
                 toast.promise(createRoom({ partnerId }, lastToken ?? ""), {
                     loading: "Starting conversation...",
                     success: (data) => {
-                        router.push(`/${data?.id}`);
+                        if (!data) throw new Error("Failed to create room");
+                        router.push(`/${data.id}`);
                         return "Conversation started";
                     },
                     error: (err: string) => err || "Failed to start conversation",

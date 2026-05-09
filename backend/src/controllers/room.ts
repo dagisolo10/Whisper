@@ -45,7 +45,7 @@ export async function createRoom(req: Request, res: Response) {
             });
 
             if (room && io) {
-                io.to(partnerId).emit("newRoom", room);
+                io.to(`user_${partnerId}`).emit("newRoom", room);
             }
 
             return { ...room, unreadCount: room._count.messages };
@@ -71,7 +71,7 @@ export async function createRoom(req: Request, res: Response) {
                 });
 
                 if (room && io) {
-                    io.to(partnerId).emit("newRoom", room);
+                    io.to(`user_${partnerId}`).emit("newRoom", room);
                     return { ...room, unreadCount: room._count.messages };
                 }
             }

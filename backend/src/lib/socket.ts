@@ -61,12 +61,14 @@ export default function initializeSocket(server: HttpServer) {
             const room = await prisma.room.findUnique({ where: { id: roomId }, include: { members: true } });
 
             if (!room) return;
+            const isCallerMember = room.members.some((mem) => mem.userId === socket.data.userId);
+            if (!isCallerMember) return;
 
             const isMember = room.members.some((mem) => mem.userId === partnerId);
 
             if (!isMember) return;
 
-            io.emit("newRoom", room);
+            io.to(`user_${partnerId}`).emit("newRoom", room);
         });
 
         socket.on("joinRoom", async (roomId: string) => {
