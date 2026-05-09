@@ -12,7 +12,7 @@ export default function Filters() {
     const user = useUser((s) => s.user);
 
     return (
-        <div className="flex flex-col items-center gap-2 border-r px-2">
+        <div className="flex h-screen flex-col items-center gap-2 border-r px-2">
             <div className="flex flex-col items-center gap-4 py-4">
                 <p>{getInitials(user?.name ?? "User")}</p>
                 <div className="bg-primary/10 size-12 rounded-full border p-2">

@@ -4,6 +4,7 @@ import useMessage from "./message-store";
 import { create } from "zustand";
 import { io, Socket } from "socket.io-client";
 import useAuthStore from "@/store/auth-store";
+import showNotification from "@/lib/notification";
 import { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-events";
 
 type WebSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -57,23 +58,39 @@ const useSocket = create<SocketStore>((set, get) => ({
             set({ onlineUsers: userIds });
         });
 
+        socket.off("newRoom");
+        socket.on("newRoom", (room) => {
+            const rooms = useRoom.getState().rooms;
+            const existingRoom = rooms.find((r) => r.id === room.id);
+            if (!existingRoom) {
+                useRoom.getState().addRoom(room);
+            }
+        });
+
         socket.off("newMessage");
-        socket.on("newMessage", (message, roomId) => {
+        socket.on("newMessage", async (message, roomId) => {
             const user = useAuthStore.getState().user;
             const activeRoomId = useRoom.getState().activeRoomId;
             const currentMessages = useMessage.getState().messages;
 
-            if (message.roomId !== roomId) return;
             const exists = currentMessages.some((msg) => msg.id === message.id);
             if (exists) return;
 
-            const inRoom = roomId === activeRoomId && message.senderId !== user?.id;
-
-            useMessage.getState().addMessage(message);
-
-            if (inRoom) {
-                socket.emit("markAsRead", roomId);
+            if (message.roomId === activeRoomId) {
+                useMessage.getState().addMessage(message);
+                if (message.senderId !== user?.id) {
+                    socket.emit("markAsRead", roomId);
+                }
             }
+
+            if (message.roomId !== activeRoomId && message.senderId !== user?.id) {
+                const permission = await Notification.requestPermission();
+                if (permission === "granted") {
+                    showNotification(message);
+                }
+            }
+
+            useRoom.getState().updateRoomPreview(message);
         });
 
         socket.off("messageRead");

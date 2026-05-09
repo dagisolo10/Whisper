@@ -16,6 +16,8 @@ export async function createRoom(req: Request, res: Response) {
         if (!partnerId) throw new HttpError(400, "partnerId is required");
         if (partnerId === userId) throw new HttpError(400, "Cannot create room with yourself");
 
+        const io: SocketServer<ClientToServerEvents, ServerToClientEvents> = req.app.get("io");
+
         const memberIds = [userId, partnerId];
         const pairKey = memberIds.sort().join("_");
 
@@ -42,6 +44,10 @@ export async function createRoom(req: Request, res: Response) {
                 },
             });
 
+            if (room && io) {
+                io.to(`user_${partnerId}`).emit("newRoom", room);
+            }
+
             return { ...room, unreadCount: room._count.messages };
         } catch (error) {
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -64,7 +70,10 @@ export async function createRoom(req: Request, res: Response) {
                     },
                 });
 
-                if (room) return { ...room, unreadCount: room._count.messages };
+                if (room && io) {
+                    io.to(`user_${partnerId}`).emit("newRoom", room);
+                    return { ...room, unreadCount: room._count.messages };
+                }
             }
 
             throw error;

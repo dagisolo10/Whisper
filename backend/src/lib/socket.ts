@@ -48,12 +48,28 @@ export default function initializeSocket(server: HttpServer) {
 
     io.on("connection", (socket) => {
         const userId = socket.data.userId;
+        if (userId) socket.join(`user_${userId}`);
+
         const currentSockets = userSocketMap.get(userId) || [];
         userSocketMap.set(userId, [...currentSockets, socket.id]);
         const connectedUsers = Array.from(userSocketMap.keys());
         socket.emit("onlineUsers", connectedUsers);
         io.emit("onlineUsers", connectedUsers);
         console.log(`Socket.IO connected. User ${userId} is online`);
+
+        socket.on("createdRoom", async (partnerId, roomId) => {
+            const room = await prisma.room.findUnique({ where: { id: roomId }, include: { members: true } });
+
+            if (!room) return;
+            const isCallerMember = room.members.some((mem) => mem.userId === socket.data.userId);
+            if (!isCallerMember) return;
+
+            const isMember = room.members.some((mem) => mem.userId === partnerId);
+
+            if (!isMember) return;
+
+            io.to(`user_${partnerId}`).emit("newRoom", room);
+        });
 
         socket.on("joinRoom", async (roomId: string) => {
             const userId = socket.data.userId;
@@ -118,9 +134,24 @@ export default function initializeSocket(server: HttpServer) {
             }
         });
 
-        socket.on("sendMessage", (newMessage: Message, roomId: string) => {
+        socket.on("sendMessage", async (newMessage: Message, roomId: string) => {
             if (socket.data.userId !== newMessage.senderId) return;
-            io.to(roomId).emit("newMessage", newMessage, roomId);
+            try {
+                const room = await prisma.room.findUnique({ where: { id: roomId }, include: { members: true } });
+
+                io.to(roomId).emit("newMessage", newMessage, roomId);
+
+                if (room) {
+                    const isSenderMember = room.members.some((m) => m.userId === socket.data.userId);
+                    if (!isSenderMember) return;
+
+                    room.members.forEach((member) => {
+                        io.to(`user_${member.userId}`).emit("newMessage", newMessage, roomId);
+                    });
+                }
+            } catch (error) {
+                console.error(`sendMessage socket error for room ${roomId}:`, error);
+            }
         });
 
         socket.on("editMessage", (updatedMessage: Message, roomId: string) => {

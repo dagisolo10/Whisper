@@ -1,42 +1,59 @@
-import { Button } from "@/components/ui/button";
-import { EditIcon, Lock, Zap } from "lucide-react";
+"use client";
+import SearchSheet from "../user-search-sheet";
 
-const quickActions = [{ label: "New chat", icon: EditIcon }];
+import { motion } from "framer-motion";
+import { MessageSquarePlus, Lock } from "lucide-react";
 
 export default function NoOpenChat() {
     return (
-        <section className="relative hidden overflow-hidden xl:flex">
-            <div className="from-primary/18 absolute top-20 left-1/2 size-64 -translate-x-1/2 rounded-full bg-radial from-0% to-transparent to-70% blur-2xl" />
-            <div className="from-chart-3/12 absolute right-20 bottom-12 size-72 rounded-full bg-radial from-0% to-transparent to-70% blur-3xl" />
+        <section className="bg-background/50 relative hidden h-screen flex-1 xl:flex">
+            <div className="bg-primary/10 absolute -top-24 left-1/2 size-96 -translate-x-1/2 rounded-full blur-[120px]" />
+            <div className="bg-chart-3/5 absolute right-0 -bottom-24 size-96 rounded-full blur-[120px]" />
 
-            <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-8 p-8 text-center">
-                <div className="bg-card border-border flex size-24 items-center justify-center rounded-full border shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
-                    <div className="bg-muted flex size-12 items-center justify-center rounded-full">
-                        <Zap className="text-primary size-6" />
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1 }}
+                className="relative z-10 flex flex-1 flex-col items-center justify-center gap-10 text-center"
+            >
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.3 }} className="relative">
+                    <div className="bg-primary/20 absolute inset-0 animate-ping rounded-full opacity-20" />
+                    <div className="bg-card border-border relative flex size-24 items-center justify-center rounded-[2em] border shadow-2xl backdrop-blur-md">
+                        <div className="bg-primary/10 flex size-14 items-center justify-center rounded-xl">
+                            <MessageSquarePlus className="text-primary size-7" />
+                        </div>
                     </div>
-                </div>
+                </motion.div>
 
-                <div>
-                    <h2 className="font-jakarta text-foreground text-3xl font-semibold tracking-tight">Whisper for desktop</h2>
-                    <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-6">Select a conversation on the left to start messaging, or jump in with a quick action below.</p>
-                </div>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.6 }} className="space-y-3">
+                    <h2 className="font-jakarta text-foreground text-4xl font-bold tracking-tight">Welcome to Whisper</h2>
+                    <p className="text-muted-foreground mx-auto max-w-md text-sm leading-relaxed">
+                        Your space for secure, seamless, and meaningful conversations. Select a chat to begin or start a fresh connection.
+                    </p>
+                </motion.div>
 
-                <div className="flex w-full max-w-3xl justify-center gap-8">
-                    {quickActions.map(({ label, icon: Icon }) => (
-                        <Button key={label} variant={"ghost"} className="border-border h-auto w-48 flex-col gap-4 rounded-[1.75rem] border p-6 hover:-translate-y-0.5">
-                            <div className="bg-primary/12 text-primary flex size-12 items-center justify-center rounded-2xl">
-                                <Icon className="size-5" />
-                            </div>
-                            <p className="font-jakarta text-foreground font-semibold">{label}</p>
-                        </Button>
-                    ))}
-                </div>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.9 }}
+                    className="flex w-full max-w-2xl justify-center gap-6"
+                >
+                    <SearchSheet />
+                </motion.div>
 
-                <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                    <Lock className="size-4" />
-                    <span>Your personal messages are end-to-end encrypted.</span>
-                </div>
-            </div>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 1.2 }}
+                    className="bg-muted/50 border-border text-muted-foreground absolute right-8 bottom-8 flex items-center gap-3 rounded-full border px-5 py-2.5 text-xs backdrop-blur-sm"
+                >
+                    <div className="flex size-2 items-center justify-center rounded-full bg-green-500/20">
+                        <div className="size-1 rounded-full bg-green-500" />
+                    </div>
+                    <Lock className="size-3.5" />
+                    <span className="font-medium">End-to-end encrypted</span>
+                </motion.div>
+            </motion.div>
         </section>
     );
 }

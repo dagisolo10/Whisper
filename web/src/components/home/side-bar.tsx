@@ -26,7 +26,10 @@ export default function Sidebar() {
             onClick={toggleSidebar}
             onKeyDown={(e) => e.key === "Escape" && setSidebar(false)}
             role="presentation"
-            className={cn("fixed inset-0 z-50 hidden transition-colors duration-300 lg:block", sidebar ? "pointer-events-auto bg-black/50" : "pointer-events-none bg-transparent")}
+            className={cn(
+                "fixed inset-0 z-50 hidden transition-colors duration-300 lg:block",
+                sidebar ? "pointer-events-auto bg-black/50" : "pointer-events-none bg-transparent",
+            )}
         >
             <aside
                 role="dialog"
@@ -34,7 +37,10 @@ export default function Sidebar() {
                 aria-modal="true"
                 aria-label="Navigation"
                 onClick={(event) => event.stopPropagation()}
-                className={cn(sidebar ? "translate-x-0" : "-translate-x-full", "bg-background absolute top-0 left-0 flex h-full w-1/4 flex-col gap-4 border-r px-4 py-6 transition-transform duration-500")}
+                className={cn(
+                    sidebar ? "translate-x-0" : "-translate-x-full",
+                    "bg-background absolute top-0 left-0 flex h-full w-1/4 flex-col gap-4 border-r px-4 py-6 transition-transform duration-500",
+                )}
             >
                 <div className="flex items-center gap-4 px-2">
                     <UserButton />
@@ -49,7 +55,12 @@ export default function Sidebar() {
 
                 <nav className="space-y-2">
                     {sidebarLinks.map(({ label, icon: Icon, href }) => (
-                        <Button asChild key={label} variant={pathname === href ? "outline" : "ghost"} className={cn(pathname === href ? "" : "text-muted-foreground", "h-10 w-full justify-start gap-3 rounded-xl px-4 text-sm")}>
+                        <Button
+                            asChild
+                            key={label}
+                            variant={pathname === href ? "outline" : "ghost"}
+                            className={cn(pathname === href ? "" : "text-muted-foreground", "h-10 w-full justify-start gap-3 rounded-xl px-4 text-sm")}
+                        >
                             <Link href={href}>
                                 <Icon className="size-5" />
                                 <span>{label}</span>

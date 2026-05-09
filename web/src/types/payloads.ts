@@ -7,10 +7,10 @@ interface BaseMessagePayload {
 
 type MessagePayloadWithRoomId = BaseMessagePayload & {
     roomId: string;
-    recipientId?: never;
+    partnerId?: never;
 };
 type MessagePayloadWithRecipientId = BaseMessagePayload & {
-    recipientId: string;
+    partnerId: string;
     roomId?: never;
 };
 

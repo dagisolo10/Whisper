@@ -1,6 +1,7 @@
-import { Message } from "./model";
+import { Message, Room } from "./model";
 
 export interface ServerToClientEvents {
+    newRoom: (room: Room) => void;
     messageRead: (roomId: string) => void;
     onlineUsers: (userIds: string[]) => void;
     messageEdited: (message: Message) => void;
@@ -10,6 +11,7 @@ export interface ServerToClientEvents {
     messageDeleted: (messageId: string, roomId: string) => void;
     userStartedTyping: (userId: string, roomId: string) => void;
     userStoppedTyping: (userId: string, roomId: string) => void;
+    roomError: (roomId: string, message: string, details: string | undefined) => void;
 }
 
 export interface ClientToServerEvents {
@@ -20,5 +22,6 @@ export interface ClientToServerEvents {
     stopTyping: (roomId: string, userId: string) => void;
     editMessage: (message: Message, roomId: string) => void;
     sendMessage: (message: Message, roomId: string) => void;
+    createdRoom: (partnerId: string, roomId: string) => void;
     deleteMessage: (message: Message, roomId: string) => void;
 }
