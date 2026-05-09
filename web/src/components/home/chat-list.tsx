@@ -13,6 +13,7 @@ import { resolveMediaUrl } from "@/lib/media";
 import useSocket from "@/store/socket-store";
 import OnlineIndicator from "./indicators/online-indicator";
 import TypingIndicator from "./indicators/typing-indicator";
+import Skeleton from "../skeleton";
 
 export default function ChatList() {
     const pathname = usePathname();
@@ -22,10 +23,15 @@ export default function ChatList() {
     const lastToken = useUser((s) => s.lastToken);
     const onlineUsers = useSocket((s) => s.onlineUsers);
     const typingUsers = useSocket((s) => s.typingUsers);
+    const fetchingRooms = useRoom((s) => s.fetchingRooms);
 
     useEffect(() => {
         getRooms(lastToken ?? "");
     }, [getRooms, lastToken]);
+
+    if (fetchingRooms) {
+        return <Skeleton tag="rooms" />;
+    }
 
     return (
         <div className="h-screen border-r">

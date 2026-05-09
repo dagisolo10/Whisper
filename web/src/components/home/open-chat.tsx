@@ -33,14 +33,7 @@ export default function OpenChatPanel() {
         clearPendingImages,
     } = useChat();
 
-    if (activeRoom === undefined || activeRoom === null) {
-        return (
-            <div className="flex h-screen flex-1 flex-col items-center justify-center gap-2">
-                <Loader2 className="text-primary size-8 animate-spin" />
-                <p className="text-muted-foreground animate-pulse text-sm">{activeRoom === undefined ? "Loading conversation..." : "Redirecting..."}</p>
-            </div>
-        );
-    }
+    if (!activeRoom) return null;
 
     const partner = activeRoom.members.find((member) => member.userId !== user?.id)?.user;
 

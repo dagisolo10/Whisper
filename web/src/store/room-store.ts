@@ -12,6 +12,9 @@ interface RoomStore {
     activeRoom: Room | null;
     activeRoomId: string | null;
 
+    fetchingRooms: boolean;
+    fetchingChat: boolean;
+
     getRooms: (token: string) => Promise<void>;
     updateRoomPreview: (message: Message) => void;
     getConversation: (roomId: string, token: string) => Promise<void>;
@@ -22,8 +25,11 @@ const useRoom = create<RoomStore>((set) => ({
     rooms: [],
     activeRoom: null,
     activeRoomId: null,
+    fetchingChat: false,
+    fetchingRooms: false,
 
     getRooms: async (token) => {
+        set({ fetchingRooms: true });
         try {
             const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
             const res = await api.get<RoomsResponse>("/room/list", auth);
@@ -34,6 +40,8 @@ const useRoom = create<RoomStore>((set) => ({
             set({ rooms: filteredData });
         } catch (err) {
             console.error("Error fetching rooms", err);
+        } finally {
+            set({ fetchingRooms: false });
         }
     },
 
@@ -52,6 +60,14 @@ const useRoom = create<RoomStore>((set) => ({
     },
 
     getConversation: async (roomId, token) => {
+        set({
+            fetchingChat: true,
+            activeRoomId: null,
+            activeRoom: null,
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
         try {
             const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
             const res = await api.get<ConversationRoomResponse>(`/room/${roomId}`, auth);
@@ -76,9 +92,13 @@ const useRoom = create<RoomStore>((set) => ({
                 activeRoom: roomWithoutMessages as Room,
                 rooms: state.rooms.map((room) => (room.id === roomId ? { ...room, unreadCount: 0 } : room)),
             }));
+
             useMessage.getState().setMessages(data.data.messages || []);
         } catch (err) {
             console.error("Error fetching conversation", err);
+            set({ activeRoom: null, activeRoomId: null });
+        } finally {
+            set({ fetchingChat: false });
         }
     },
 

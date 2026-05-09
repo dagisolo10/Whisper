@@ -5,7 +5,6 @@ import useMessage from "@/store/message-store";
 import useRoom from "@/store/room-store";
 import useSocket from "@/store/socket-store";
 import { MessagePayload } from "@/types/payloads";
-import { useRouter } from "next/navigation";
 import { useState, useRef, SyntheticEvent, ChangeEvent, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import useUser from "@/store/auth-store";
@@ -28,7 +27,6 @@ export default function useChat() {
     const typingUsers = useSocket((s) => s.typingUsers);
     const sendMessage = useMessage((s) => s.sendMessage);
 
-    const router = useRouter();
     const [message, setMessage] = useState("");
     const [isSending, setIsSending] = useState(false);
     const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
@@ -174,10 +172,6 @@ export default function useChat() {
         const filteredPeople = typingPeople.filter((uId) => uId !== user?.id);
         return filteredPeople.length > 0;
     }, [activeRoom, typingUsers, user?.id]);
-
-    useEffect(() => {
-        if (activeRoom === null) router.replace("/");
-    }, [router, activeRoom]);
 
     useEffect(() => {
         if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: "smooth" });

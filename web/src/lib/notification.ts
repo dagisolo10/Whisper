@@ -15,8 +15,12 @@ export default function showNotification(message: Message) {
         silent: false,
         tag: message.roomId,
         body: notificationBody,
-        icon: message.user?.mainAvatarUrl || "/images/coder.jpg",
+        icon: message.user?.mainAvatarUrl || "/images/avatar.png",
     });
+
+    const notificationSound = new Audio("/sounds/notification.mp3");
+    notificationSound.currentTime = 0;
+    notificationSound.play().catch((e) => console.error("Notification sound failed to play", e));
 
     notification.onclick = () => {
         window.focus();
