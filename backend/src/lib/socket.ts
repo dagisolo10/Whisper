@@ -57,6 +57,18 @@ export default function initializeSocket(server: HttpServer) {
         io.emit("onlineUsers", connectedUsers);
         console.log(`Socket.IO connected. User ${userId} is online`);
 
+        socket.on("createdRoom", async (partnerId, roomId) => {
+            const room = await prisma.room.findUnique({ where: { id: roomId }, include: { members: true } });
+
+            if (!room) return;
+
+            const isMember = room.members.some((mem) => mem.userId === partnerId);
+
+            if (!isMember) return;
+
+            io.emit("newRoom", room);
+        });
+
         socket.on("joinRoom", async (roomId: string) => {
             const userId = socket.data.userId;
             if (!userId) {

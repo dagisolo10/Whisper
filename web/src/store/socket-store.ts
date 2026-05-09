@@ -58,6 +58,15 @@ const useSocket = create<SocketStore>((set, get) => ({
             set({ onlineUsers: userIds });
         });
 
+        socket.off("newRoom");
+        socket.on("newRoom", (room) => {
+            const rooms = useRoom.getState().rooms;
+            const existingRoom = rooms.find((r) => r.id === room.id);
+            if (!existingRoom) {
+                useRoom.getState().addRoom(room);
+            }
+        });
+
         socket.off("newMessage");
         socket.on("newMessage", async (message, roomId) => {
             const user = useAuthStore.getState().user;

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { usePathname } from "next/navigation";
-import { ImageIcon, Search } from "lucide-react";
+import { ImageIcon, MessageSquarePlus, Search } from "lucide-react";
 import useRoom from "@/store/room-store";
 import useUser from "@/store/auth-store";
 import { useEffect } from "react";
@@ -31,6 +31,27 @@ export default function ChatList() {
 
     if (fetchingRooms) {
         return <Skeleton tag="rooms" />;
+    }
+
+    if (rooms.length === 0) {
+        return (
+            <div className="flex h-screen flex-col border-r">
+                <div className="p-4 sm:px-6">
+                    <div className="text-muted-foreground group border-input flex h-10 items-center rounded-full border px-4">
+                        <Search className="group-focus-within:text-primary size-4" />
+                        <Input placeholder="Search conversations..." className="border-none bg-transparent! focus-visible:border-0 focus-visible:ring-0" />
+                    </div>
+                </div>
+
+                <div className="flex flex-1 flex-col items-center p-6 pt-24 text-center">
+                    <div className="bg-primary/10 mb-4 flex size-16 items-center justify-center rounded-full">
+                        <MessageSquarePlus className="text-primary size-8" />
+                    </div>
+                    <h3 className="text-foreground font-semibold">No conversations yet</h3>
+                    <p className="text-muted-foreground mt-1 text-xs">Start a new whisper to begin chatting with your network.</p>
+                </div>
+            </div>
+        );
     }
 
     return (

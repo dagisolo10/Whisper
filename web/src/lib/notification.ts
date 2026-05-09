@@ -2,7 +2,6 @@ import { Message } from "@/types/model";
 
 export default function showNotification(message: Message) {
     if (typeof window === "undefined" || !("Notification" in window)) return;
-    if (Notification.permission !== "granted") return;
 
     const senderName = message.user?.name || "Someone";
     let notificationBody = "";

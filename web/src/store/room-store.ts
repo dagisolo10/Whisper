@@ -15,6 +15,8 @@ interface RoomStore {
     fetchingRooms: boolean;
     fetchingChat: boolean;
 
+    addRoom: (room: Room) => void;
+
     getRooms: (token: string) => Promise<void>;
     updateRoomPreview: (message: Message) => void;
     getConversation: (roomId: string, token: string) => Promise<void>;
@@ -27,6 +29,13 @@ const useRoom = create<RoomStore>((set) => ({
     activeRoomId: null,
     fetchingChat: false,
     fetchingRooms: false,
+
+    addRoom: (room) => {
+        set((state) => {
+            const otherRooms = state.rooms.filter((r) => r.id !== room.id);
+            return { rooms: [room, ...otherRooms] };
+        });
+    },
 
     getRooms: async (token) => {
         set({ fetchingRooms: true });
