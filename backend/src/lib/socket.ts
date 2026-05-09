@@ -12,7 +12,7 @@ const userSocketMap = new Map<string, string[]>();
 
 export default function initializeSocket(server: HttpServer) {
     const io = new SocketServer<ClientToServerEvents, ServerToClientEvents>(server, {
-        cors: { origin: ENV.CLIENT_URL, credentials: true },
+        cors: { origin: ENV.CLIENT_URL || "http://localhost:8081", credentials: true },
     });
 
     console.log("🚀 Socket.IO server connecting...");
