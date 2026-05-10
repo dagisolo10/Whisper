@@ -20,7 +20,7 @@ interface MessageStore {
     setMessages: (serverMessages: StoreMessage[]) => void;
     editMessage: (payload: StoreMessage, token: string) => Promise<void>;
     deleteMessage: (messageId: string, token: string) => Promise<void>;
-    sendMessage: (payload: SendMessagePayload, token: string) => Promise<{ success: boolean; error: string | undefined | unknown }>;
+    sendMessage: (payload: SendMessagePayload, token: string, clientId?: string) => Promise<{ success: boolean; error: string | undefined | unknown; message?: StoreMessage }>;
 }
 
 const useMessage = create<MessageStore>((set) => ({
@@ -42,7 +42,13 @@ const useMessage = create<MessageStore>((set) => ({
 
     setMessages: (serverMessages) => {
         set((state) => {
-            const failedMessages = state.messages.filter((m) => m.isFailed && !serverMessages.some((sm) => sm.textContent === m.textContent));
+            const failedMessages = state.messages.filter(
+                (m) =>
+                    m.isFailed &&
+                    !serverMessages.some(
+                        (sm) => sm.textContent === m.textContent && sm.senderId === m.senderId && +Math.abs(new Date(sm.createdAt).getTime() - new Date(m.createdAt).getTime()) < 5000,
+                    ),
+            );
             return { messages: [...failedMessages, ...serverMessages] };
         });
     },
@@ -62,7 +68,7 @@ const useMessage = create<MessageStore>((set) => ({
             if (exists) return state;
 
             const filteredMessages = state.messages.filter((m) => {
-                const isOptimisticTwin = m.id.length > 30 && m.textContent === message.textContent && m.roomId === message.roomId;
+                const isOptimisticTwin = m.id.startsWith("optimistic_") && m.textContent === message.textContent && m.roomId === message.roomId;
 
                 return !isOptimisticTwin;
             });
@@ -73,8 +79,7 @@ const useMessage = create<MessageStore>((set) => ({
 
     sendMessage: async (payload, token) => {
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const shouldSucceed = typeof window !== "undefined" ? !(window as any).FORCE_FAIL : true;
+            const shouldSucceed: boolean = typeof window !== "undefined" ? !window.FORCE_FAIL : true || true;
             await sleep(1500, { success: shouldSucceed });
 
             const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
@@ -83,7 +88,8 @@ const useMessage = create<MessageStore>((set) => ({
 
             if (!data.success) throw new Error(data.error);
 
-            return { success: true, error: data.error };
+            const message = data.data?.message as StoreMessage | undefined;
+            return { success: true, error: undefined, message };
         } catch (error) {
             console.error("Error sending message", error);
             const errorMessage = error instanceof Error ? error.message : "Message send failed";

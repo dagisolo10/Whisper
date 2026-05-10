@@ -75,10 +75,9 @@ export default function useChat() {
 
     async function handleSendMessage(e: SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
-        const tempId = crypto.randomUUID();
+        const tempId = "optimistic_" + crypto.randomUUID();
 
         const trimmedMessage = message.trim();
-        const currentMessageBackup = trimmedMessage;
 
         if (!activeRoom || !lastToken || isSending || !user || !socket || (!trimmedMessage && pendingImages.length === 0)) return;
 
@@ -95,15 +94,11 @@ export default function useChat() {
                 formData.append("textContent", trimmedMessage);
             }
 
-            try {
-                const res = await sendMessage(formData, lastToken);
+            const res = await sendMessage(formData, lastToken);
 
-                if (!res.success && typeof res.error === "string") throw new Error(res.error);
+            if (!res.success && typeof res.error === "string") throw new Error(res.error);
 
-                clearPendingImages();
-            } catch (error) {
-                throw error;
-            }
+            clearPendingImages();
         };
 
         const sendTextMessage = async () => {
@@ -143,6 +138,7 @@ export default function useChat() {
                     useMessage.getState().addMessage({ ...optimisticMsg, isFailed: true });
                 } finally {
                     useMessage.getState().removePendingId(tempId);
+                    setIsSending(false);
                 }
             });
         };
@@ -157,9 +153,7 @@ export default function useChat() {
             console.error("Error sending message", error);
             const errorMessage = error instanceof Error ? error.message : "Couldn't send message";
             toast.error(errorMessage, { description: "Please try again." });
-            setMessage(currentMessageBackup);
         } finally {
-            setIsSending(false);
             socket.emit("stopTyping", activeRoom.id, user?.id);
             isTypingRef.current = false;
         }
@@ -177,21 +171,28 @@ export default function useChat() {
                 textContent: message.textContent,
             };
 
+            const tempId = message.id;
+
             startTransition(async () => {
                 try {
-                    useMessage.getState().addPendingId(message.id);
-                    useMessage.getState().updateMessage({ id: message.id }, { isFailed: false });
+                    useMessage.getState().addPendingId(tempId);
+                    useMessage.getState().updateMessage({ id: tempId }, { isFailed: false });
 
-                    const res = await sendMessage(payload, lastToken);
+                    const res = await sendMessage(payload, lastToken, tempId);
 
                     if (!res.success && typeof res.error === "string") throw new Error(res.error);
+
+                    if (res.message) {
+                        useMessage.getState().removeMessage(tempId);
+                        useMessage.getState().addMessage(res.message);
+                    }
                 } catch (error) {
                     console.error("Retry failed", error);
                     const errorMessage = error instanceof Error ? error.message : "Retry failed";
                     toast.error(errorMessage);
-                    useMessage.getState().updateMessage({ id: message.id }, { isFailed: true });
+                    useMessage.getState().updateMessage({ id: tempId }, { isFailed: true });
                 } finally {
-                    useMessage.getState().removePendingId(message.id);
+                    useMessage.getState().removePendingId(tempId);
                 }
             });
         };
@@ -204,9 +205,11 @@ export default function useChat() {
             switch (message.messageType) {
                 case "Text":
                     await textRetry();
+                    break;
 
                 case "Image":
                     await imageRetry();
+                    break;
             }
         } catch (error) {
             console.error("Error in retry attempt", error);

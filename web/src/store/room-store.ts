@@ -101,7 +101,7 @@ const useRoom = create<RoomStore>((set, get) => ({
             }
 
             const { messages, ...roomWithoutMessages } = data.data;
-            const serverMessages: StoreMessage[] = messages.map((msg) => ({ ...msg, isFailed: false })) || [];
+            const serverMessages: StoreMessage[] = (messages ?? []).map((msg) => ({ ...msg, isFailed: false }));
 
             set((state) => ({
                 activeRoomId: roomId,

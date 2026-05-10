@@ -25,6 +25,7 @@ export default function OpenChatPanel() {
         isSending,
         activeRoom,
         onlineUsers,
+        retryMessage,
         handleTyping,
         imageInputRef,
         pendingImages,
@@ -117,7 +118,7 @@ export default function OpenChatPanel() {
                             return (
                                 <div key={message.id}>
                                     {isNewDay && <p className="m-auto mb-4 w-fit rounded-full bg-white/10 px-4 py-1 text-xs">{formatDate(message.createdAt, "daySeparator")}</p>}
-                                    <ChatCard message={message} />
+                                    <ChatCard message={message} onRetry={retryMessage} />
                                 </div>
                             );
                         })}
@@ -165,7 +166,17 @@ export default function OpenChatPanel() {
             )}
 
             <form className="border-border bg-background flex items-center gap-3 border border-t px-4 py-5 shadow-sm" onSubmit={handleSendMessage}>
-                <input ref={imageInputRef} id="image" name="image" type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
+                <input
+                    ref={imageInputRef}
+                    title="Upload image"
+                    id="image"
+                    name="image"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleImageSelect}
+                />
 
                 <Button type="button" variant="outline" size="icon" disabled={isSending} onClick={() => imageInputRef.current?.click()}>
                     <span className="sr-only">Upload image</span>

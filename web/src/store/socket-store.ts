@@ -15,12 +15,22 @@ interface SocketStore {
     typingUsers: Record<string, string[]>;
     connectSocket: (token: string) => void;
     disconnectSocket: () => void;
+
+    addTypingUser: (roomId: string, userId: string) => void;
+    removeTypingUser: (roomId: string, userId: string) => void;
 }
 
 const useSocket = create<SocketStore>((set, get) => ({
     socket: null,
     onlineUsers: [],
     typingUsers: {},
+
+    addTypingUser: (roomId, userId) => {
+        set((state) => ({ typingUsers: { [roomId]: Array.from(new Set([...(state.typingUsers[roomId] || []), userId])) } }));
+    },
+    removeTypingUser: (roomId, userId) => {
+        set((state) => ({ typingUsers: { [roomId]: Array.from(new Set([...state.typingUsers[roomId].filter((id) => id !== userId)])) } }));
+    },
 
     connectSocket: (token) => {
         if (!token) return;
@@ -94,28 +104,22 @@ const useSocket = create<SocketStore>((set, get) => ({
 
         socket.off("messageRead");
         socket.on("messageRead", (roomId) => {
-            useMessage.getState().updateMessage({ roomId, senderId: useUser.getState().user?.id }, { read: true });
+            const user = useUser.getState().user;
+            if (!user) return;
+            useMessage.getState().updateMessage({ roomId, senderId: user.id }, { read: true });
         });
 
         socket.off("messageEdited");
-        socket.on("messageEdited", (updatedMessage) => {
-            useMessage.getState().updateMessage({ id: updatedMessage.id }, updatedMessage);
-        });
+        socket.on("messageEdited", (updatedMessage) => useMessage.getState().updateMessage({ id: updatedMessage.id }, updatedMessage));
 
         socket.off("messageDeleted");
-        socket.on("messageDeleted", (messageId: string) => {
-            useMessage.getState().removeMessage(messageId);
-        });
+        socket.on("messageDeleted", (messageId: string) => useMessage.getState().removeMessage(messageId));
 
         socket.off("userStartedTyping");
-        socket.on("userStartedTyping", (userId: string, roomId: string) => {
-            set((state) => ({ typingUsers: { ...state.typingUsers, [roomId]: Array.from(new Set([...(state.typingUsers[roomId] || []), userId])) } }));
-        });
+        socket.on("userStartedTyping", (userId: string, roomId: string) => get().addTypingUser(roomId, userId));
 
         socket.off("userStoppedTyping");
-        socket.on("userStoppedTyping", (userId, roomId) => {
-            set((state) => ({ typingUsers: { ...state.typingUsers, [roomId]: (state.typingUsers[roomId] || []).filter((id) => id !== userId) } }));
-        });
+        socket.on("userStoppedTyping", (userId, roomId) => get().removeTypingUser(roomId, userId));
 
         socket.off("roomJoinError");
         socket.on("roomJoinError", (roomId, message) => console.error(`Failed to join room ${roomId}: ${message}`));

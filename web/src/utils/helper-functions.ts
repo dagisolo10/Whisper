@@ -67,12 +67,10 @@ export const getInitials = (name: string) =>
 export const sleep = async (delay: number, status: { success: boolean }) => {
     await new Promise((resolve, reject) => {
         setTimeout(() => {
-            switch (status.success) {
-                case true:
-                    resolve("Success");
-
-                case false:
-                    reject("Sleep reject");
+            if (status.success) {
+                resolve("Success");
+            } else {
+                reject(new Error("Operation failed"));
             }
         }, delay);
     });

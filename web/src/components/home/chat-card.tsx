@@ -7,9 +7,10 @@ import { formatDate } from "@/utils/helper-functions";
 import { resolveMediaUrl } from "@/lib/media";
 import { ImageCarousel } from "../image-carousel";
 import useMessage, { StoreMessage } from "@/store/message-store";
-import useChat from "@/hooks/use-chat";
 
-export default function ChatCard({ message }: { message: StoreMessage }) {
+import { memo } from "react";
+
+const ChatCard = ({ message, onRetry }: { message: StoreMessage; onRetry: (m: StoreMessage) => void }) => {
     const { user } = useUser();
     const isMine = message.senderId === user?.id;
     const hasImage = message.messageType === "Image" && message.imageUrls.length > 0;
@@ -21,7 +22,6 @@ export default function ChatCard({ message }: { message: StoreMessage }) {
     const galleryImages = images.map((imageUrl, index) => ({ id: `${message.id}-${index}`, src: resolveMediaUrl(imageUrl) ?? imageUrl, alt: `Sent image ${index + 1}` }));
 
     const isPending = useMessage((s) => s.pendingMessageIds.has(message.id));
-    const { retryMessage } = useChat();
 
     return (
         <div key={message.id} className={cn("flex", isMine ? "justify-end" : "justify-start")}>
@@ -33,6 +33,7 @@ export default function ChatCard({ message }: { message: StoreMessage }) {
                                 <div className={cn(images.length === 1 ? "grid-cols-1" : "grid-cols-2", "grid gap-2 overflow-hidden rounded-t-lg")}>
                                     {galleryImages.map((image, index) => (
                                         <button
+                                            title="Open image preview"
                                             key={image.id}
                                             type="button"
                                             onClick={() => openPreview(index)}
@@ -65,7 +66,12 @@ export default function ChatCard({ message }: { message: StoreMessage }) {
                     {isPending ? (
                         <Clock className="text-muted-foreground size-3" />
                     ) : message.isFailed ? (
-                        <button onClick={async () => await retryMessage(message)} className="text-destructive flex items-center gap-1 transition-all hover:underline active:scale-95">
+                        <button
+                            type="button"
+                            aria-label="Retry message"
+                            onClick={() => onRetry(message)}
+                            className="text-destructive flex items-center gap-1 transition-all hover:underline active:scale-95"
+                        >
                             <span className="text-[10px] font-medium">Retry</span>
                             <AlertCircle className="size-3" />
                         </button>
@@ -78,7 +84,7 @@ export default function ChatCard({ message }: { message: StoreMessage }) {
             </div>
         </div>
     );
-}
+};
 
 function DoubleCheck({ isMine }: { isMine: boolean }) {
     return (
@@ -88,3 +94,5 @@ function DoubleCheck({ isMine }: { isMine: boolean }) {
         </div>
     );
 }
+
+export default memo(ChatCard);
