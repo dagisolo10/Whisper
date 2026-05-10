@@ -32,7 +32,7 @@ const useSocket = create<SocketStore>((set, get) => ({
         if (existing) {
             socket = existing;
         } else {
-            socket = io(baseUrl, { auth: { token }, autoConnect: true, transports: ["websocket"] });
+            socket = io(baseUrl, { auth: { token }, autoConnect: true, transports: ["websocket", "polling"] });
         }
 
         socket.auth = { token };
