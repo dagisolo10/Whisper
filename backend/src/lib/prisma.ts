@@ -15,7 +15,7 @@ const pool = new pg.Pool({
 });
 const adapter = new PrismaPg(pool);
 
-const prisma = globalForPrisma.prisma || new PrismaClient({ adapter, log: isProduction ? [] : ["query"] });
+const prisma = globalForPrisma.prisma || new PrismaClient({ adapter, log: isProduction ? ["error"] : ["query", "error"] });
 
 if (!isProduction) globalForPrisma.prisma = prisma;
 
