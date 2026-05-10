@@ -23,6 +23,7 @@ export async function sendMessage(req: Request, res: Response) {
 
         const textContent = typeof req.body.textContent === "string" ? req.body.textContent.trim() : "";
         const imageUrls = messageType === "Image" ? files.map((file) => `/uploads/${file.filename}`) : [];
+        const clientId = typeof req.body.clientId === "string" ? req.body.clientId.trim() || null : null;
 
         const senderId = req.userId;
         const roomId = req.body.roomId as string | undefined;
@@ -107,9 +108,10 @@ export async function sendMessage(req: Request, res: Response) {
             const newMessage = await tx.message.create({
                 data: {
                     senderId,
+                    clientId,
+                    imageUrls,
                     messageType,
                     textContent: textContent || null,
-                    imageUrls,
                     roomId: existingRoom.id,
                 },
                 include: {

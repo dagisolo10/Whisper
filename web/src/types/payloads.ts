@@ -1,6 +1,7 @@
 import { MessageType } from "./model";
 
 interface BaseMessagePayload {
+    clientId?: string;
     textContent: string;
     messageType: MessageType;
 }

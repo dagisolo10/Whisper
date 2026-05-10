@@ -5,7 +5,7 @@ import useMessage, { StoreMessage } from "@/store/message-store";
 import useRoom from "@/store/room-store";
 import useSocket from "@/store/socket-store";
 import { MessagePayload } from "@/types/payloads";
-import { useState, useRef, SyntheticEvent, ChangeEvent, useMemo, useEffect, startTransition } from "react";
+import { useState, useRef, SyntheticEvent, ChangeEvent, useMemo, useEffect, startTransition, useCallback } from "react";
 import { toast } from "sonner";
 import useUser from "@/store/user-store";
 import { PendingImage } from "@/types/media";
@@ -92,7 +92,7 @@ export default function useChat() {
                 formData.append("textContent", trimmedMessage);
             }
 
-            const res = await sendMessage(formData, lastToken);
+            const res = await sendMessage(formData, lastToken, tempId);
 
             if (!res.success) throw new Error(typeof res.error === "string" ? res.error : String(res.error ?? "Send failed"));
 
@@ -113,6 +113,7 @@ export default function useChat() {
                 id: tempId,
                 read: false,
                 imageUrls: [],
+                clientId: tempId,
                 senderId: user.id,
                 messageType: "Text",
                 roomId: activeRoom.id,
@@ -126,7 +127,7 @@ export default function useChat() {
                 try {
                     useMessage.getState().addPendingId(tempId);
 
-                    const res = await sendMessage(payload, lastToken);
+                    const res = await sendMessage(payload, lastToken, tempId);
 
                     if (!res.success) throw new Error(typeof res.error === "string" ? res.error : String(res.error ?? "Send failed"));
 
@@ -159,61 +160,66 @@ export default function useChat() {
         }
     }
 
-    async function retryMessage(message: StoreMessage) {
-        if (!activeRoom || !lastToken || isSending || !user || !socket || !message) return;
+    const retryMessage = useCallback(
+        async (message: StoreMessage) => {
+            if (!activeRoom || !lastToken || isSending || !user || !socket || !message) return;
+            if (useMessage.getState().pendingMessageIds.has(message.id)) return;
 
-        const textRetry = async () => {
-            if (!message.textContent) return;
+            const textRetry = async () => {
+                if (!message.textContent) return;
 
-            const payload: MessagePayload = {
-                roomId: message.roomId,
-                messageType: message.messageType,
-                textContent: message.textContent,
+                const payload: MessagePayload = {
+                    roomId: message.roomId,
+                    messageType: message.messageType,
+                    textContent: message.textContent,
+                };
+
+                const tempId = message.id;
+                const clientId = message.clientId || tempId;
+
+                startTransition(async () => {
+                    try {
+                        useMessage.getState().addPendingId(tempId);
+                        useMessage.getState().updateMessage({ id: tempId }, { isFailed: false });
+
+                        const res = await sendMessage(payload, lastToken, clientId);
+
+                        if (!res.success) throw new Error(typeof res.error === "string" ? res.error : String(res.error ?? "Retry failed"));
+
+                        if (res.message) useMessage.getState().addMessage(res.message);
+                    } catch (error) {
+                        console.error("Retry failed", error);
+                        const errorMessage = error instanceof Error ? error.message : String(error);
+                        toast.error(errorMessage);
+                        useMessage.getState().updateMessage({ id: tempId }, { isFailed: true });
+                    } finally {
+                        useMessage.getState().removePendingId(tempId);
+                    }
+                });
             };
 
-            const tempId = message.id;
+            const imageRetry = async () => {
+                if (message.imageUrls.length === 0) return;
+            };
 
-            startTransition(async () => {
-                try {
-                    useMessage.getState().addPendingId(tempId);
-                    useMessage.getState().updateMessage({ id: tempId }, { isFailed: false });
+            try {
+                switch (message.messageType) {
+                    case "Text":
+                        await textRetry();
+                        break;
 
-                    const res = await sendMessage(payload, lastToken, tempId);
-
-                    if (!res.success) throw new Error(typeof res.error === "string" ? res.error : String(res.error ?? "Retry failed"));
-
-                    if (res.message) useMessage.getState().addMessage(res.message);
-                } catch (error) {
-                    console.error("Retry failed", error);
-                    const errorMessage = error instanceof Error ? error.message : String(error);
-                    toast.error(errorMessage);
-                    useMessage.getState().updateMessage({ id: tempId }, { isFailed: true });
-                } finally {
-                    useMessage.getState().removePendingId(tempId);
+                    case "Image":
+                        await imageRetry();
+                        break;
                 }
-            });
-        };
-
-        const imageRetry = async () => {
-            if (message.imageUrls.length === 0) return;
-        };
-
-        try {
-            switch (message.messageType) {
-                case "Text":
-                    await textRetry();
-                    break;
-
-                case "Image":
-                    await imageRetry();
-                    break;
+            } catch (error) {
+                console.error("Error in retry attempt", error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                toast.error(errorMessage);
             }
-        } catch (error) {
-            console.error("Error in retry attempt", error);
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            toast.error(errorMessage);
-        }
-    }
+        },
+        [activeRoom, isSending, lastToken, sendMessage, socket, user],
+    );
 
     async function sendWave(partnerId: string) {
         if (!lastToken) return;
@@ -224,7 +230,7 @@ export default function useChat() {
                 messageType: "Text",
                 partnerId,
             };
-            const res = await sendMessage(payload, lastToken);
+            const res = await sendMessage(payload, lastToken, crypto.randomUUID());
             if (!res.success) throw new Error(typeof res.error === "string" ? res.error : String(res.error ?? "Could not send wave"));
         } catch (err) {
             console.error("Error sending wave", err);

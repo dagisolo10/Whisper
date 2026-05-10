@@ -1,9 +1,9 @@
 import api from "@/lib/axios";
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 import { Message } from "@/types/model";
-import { sleep } from "@/utils/helper-functions";
 import { SendMessagePayload } from "@/types/payloads";
+import { simulateDelay } from "@/utils/helper-functions";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { MessageResponse, MessageSendResponse } from "@/types/response";
 
 export type StoreMessage = Message & { isFailed?: boolean };
@@ -21,6 +21,10 @@ function isOptimisticTwin(existing: StoreMessage, incoming: StoreMessage): boole
     if (existing.messageType !== incoming.messageType) return false;
     if (existing.senderId !== incoming.senderId || existing.roomId !== incoming.roomId) return false;
 
+    if (existing.clientId && incoming.clientId) {
+        return existing.clientId === incoming.clientId;
+    }
+
     if (incoming.messageType === "Text") {
         return normalizeTextContent(existing.textContent) === normalizeTextContent(incoming.textContent);
     }
@@ -35,7 +39,7 @@ function isOptimisticTwin(existing: StoreMessage, incoming: StoreMessage): boole
 }
 
 function contentMatchesPersistedFailed(failedMsg: StoreMessage, server: StoreMessage): boolean {
-    if (failedMsg.isFailed) return true;
+    if (!failedMsg.isFailed) return false;
     if (failedMsg.roomId !== server.roomId || failedMsg.senderId !== server.senderId) return false;
     if (failedMsg.messageType !== server.messageType) return false;
     if (failedMsg.messageType === "Text") {
@@ -127,13 +131,27 @@ const useMessage = create<MessageStore>()(
                 });
             },
 
-            sendMessage: async (payload, token) => {
+            sendMessage: async (payload, token, clientId) => {
                 try {
-                    const shouldSucceed = typeof window !== "undefined" ? !window.FORCE_FAIL : true;
-                    await sleep(1500, { success: shouldSucceed });
+                    const shouldSucceed = typeof window !== "undefined" ? !window.FORCE_FAIL : true && process.env.NODE_ENV !== "production";
+                    await simulateDelay(1500, { success: shouldSucceed });
+
+                    const payloadWithClientId =
+                        payload instanceof FormData
+                            ? (() => {
+                                  const formData = new FormData();
+                                  for (const [key, value] of payload.entries()) {
+                                      formData.append(key, value);
+                                  }
+                                  if (clientId) {
+                                      formData.append("clientId", clientId);
+                                  }
+                                  return formData;
+                              })()
+                            : { ...payload, ...(clientId && { clientId }) };
 
                     const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-                    const res = await api.post<MessageSendResponse>("/message/send", payload, auth);
+                    const res = await api.post<MessageSendResponse>("/message/send", payloadWithClientId, auth);
                     const data = res.data;
 
                     if (!data.success) {

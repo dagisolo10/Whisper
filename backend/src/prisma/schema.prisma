@@ -50,6 +50,7 @@ model Message {
     read        Boolean     @default(false)
     senderId    String
     roomId      String
+    clientId    String?
     lastInRoom  Room?       @relation("LastMessage")
     room        Room        @relation("RoomMessages", fields: [roomId], references: [id], onDelete: Cascade)
     user        User        @relation(fields: [senderId], references: [id], onDelete: Cascade)

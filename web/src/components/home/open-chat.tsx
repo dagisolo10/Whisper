@@ -64,7 +64,7 @@ export default function OpenChatPanel() {
                                 unoptimized
                             />
                         ) : (
-                            <div className={cn("border-primary flex size-8 shrink-0 items-center justify-center rounded-full border bg-linear-to-br text-xs font-semibold text-white shadow-sm")}>
+                            <div className="border-primary flex size-8 shrink-0 items-center justify-center rounded-full border bg-linear-to-br text-xs font-semibold text-white shadow-sm">
                                 {avatar}
                             </div>
                         )}

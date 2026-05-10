@@ -26,10 +26,21 @@ const useSocket = create<SocketStore>((set, get) => ({
     typingUsers: {},
 
     addTypingUser: (roomId, userId) => {
-        set((state) => ({ typingUsers: { [roomId]: Array.from(new Set([...(state.typingUsers[roomId] || []), userId])) } }));
+        set((state) => ({
+            typingUsers: {
+                ...state.typingUsers,
+                [roomId]: Array.from(new Set([...(state.typingUsers[roomId] || []), userId])),
+            },
+        }));
     },
+
     removeTypingUser: (roomId, userId) => {
-        set((state) => ({ typingUsers: { [roomId]: Array.from(new Set([...state.typingUsers[roomId].filter((id) => id !== userId)])) } }));
+        set((state) => ({
+            typingUsers: {
+                ...state.typingUsers,
+                [roomId]: state.typingUsers[roomId].filter((id) => id !== userId),
+            },
+        }));
     },
 
     connectSocket: (token) => {
@@ -113,10 +124,10 @@ const useSocket = create<SocketStore>((set, get) => ({
         socket.on("messageEdited", (updatedMessage) => useMessage.getState().updateMessage({ id: updatedMessage.id }, updatedMessage));
 
         socket.off("messageDeleted");
-        socket.on("messageDeleted", (messageId: string) => useMessage.getState().removeMessage(messageId));
+        socket.on("messageDeleted", (messageId) => useMessage.getState().removeMessage(messageId));
 
         socket.off("userStartedTyping");
-        socket.on("userStartedTyping", (userId: string, roomId: string) => get().addTypingUser(roomId, userId));
+        socket.on("userStartedTyping", (userId, roomId) => get().addTypingUser(roomId, userId));
 
         socket.off("userStoppedTyping");
         socket.on("userStoppedTyping", (userId, roomId) => get().removeTypingUser(roomId, userId));
