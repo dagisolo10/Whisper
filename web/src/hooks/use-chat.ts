@@ -5,7 +5,7 @@ import useMessage, { StoreMessage } from "@/store/message-store";
 import useRoom from "@/store/room-store";
 import useSocket from "@/store/socket-store";
 import { MessagePayload } from "@/types/payloads";
-import { useState, useRef, SyntheticEvent, ChangeEvent, useMemo, useEffect, useOptimistic, startTransition } from "react";
+import { useState, useRef, SyntheticEvent, ChangeEvent, useMemo, useEffect, startTransition } from "react";
 import { toast } from "sonner";
 import useUser from "@/store/user-store";
 import { PendingImage } from "@/types/media";
@@ -27,8 +27,6 @@ export default function useChat() {
     const onlineUsers = useSocket((s) => s.onlineUsers);
     const typingUsers = useSocket((s) => s.typingUsers);
     const sendMessage = useMessage((s) => s.sendMessage);
-
-    const [optimisticMessages, createOptimisticMessage] = useOptimistic(messages, (state, newMessage: StoreMessage) => [newMessage, ...state]);
 
     const [message, setMessage] = useState("");
     const [isSending, setIsSending] = useState(false);
@@ -96,7 +94,7 @@ export default function useChat() {
 
             const res = await sendMessage(formData, lastToken);
 
-            if (!res.success && typeof res.error === "string") throw new Error(res.error);
+            if (!res.success) throw new Error(typeof res.error === "string" ? res.error : String(res.error ?? "Send failed"));
 
             clearPendingImages();
         };
@@ -122,20 +120,22 @@ export default function useChat() {
                 createdAt: new Date().toISOString(),
             };
 
+            useMessage.getState().addMessage(optimisticMsg);
+
             startTransition(async () => {
                 try {
-                    createOptimisticMessage(optimisticMsg);
-
                     useMessage.getState().addPendingId(tempId);
 
                     const res = await sendMessage(payload, lastToken);
 
-                    if (!res.success && typeof res.error === "string") throw new Error(res.error);
+                    if (!res.success) throw new Error(typeof res.error === "string" ? res.error : String(res.error ?? "Send failed"));
+
+                    if (res.message) useMessage.getState().addMessage(res.message);
                 } catch (error) {
                     console.error("Failed to send", error);
-                    const errorMessage = error instanceof Error ? error.message : "Failed to send";
+                    const errorMessage = error instanceof Error ? error.message : String(error);
                     toast.error(errorMessage);
-                    useMessage.getState().addMessage({ ...optimisticMsg, isFailed: true });
+                    useMessage.getState().updateMessage({ id: tempId }, { isFailed: true });
                 } finally {
                     useMessage.getState().removePendingId(tempId);
                     setIsSending(false);
@@ -151,8 +151,8 @@ export default function useChat() {
             }
         } catch (error) {
             console.error("Error sending message", error);
-            const errorMessage = error instanceof Error ? error.message : "Couldn't send message";
-            toast.error(errorMessage, { description: "Please try again." });
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(errorMessage);
         } finally {
             socket.emit("stopTyping", activeRoom.id, user?.id);
             isTypingRef.current = false;
@@ -180,15 +180,12 @@ export default function useChat() {
 
                     const res = await sendMessage(payload, lastToken, tempId);
 
-                    if (!res.success && typeof res.error === "string") throw new Error(res.error);
+                    if (!res.success) throw new Error(typeof res.error === "string" ? res.error : String(res.error ?? "Retry failed"));
 
-                    if (res.message) {
-                        useMessage.getState().removeMessage(tempId);
-                        useMessage.getState().addMessage(res.message);
-                    }
+                    if (res.message) useMessage.getState().addMessage(res.message);
                 } catch (error) {
                     console.error("Retry failed", error);
-                    const errorMessage = error instanceof Error ? error.message : "Retry failed";
+                    const errorMessage = error instanceof Error ? error.message : String(error);
                     toast.error(errorMessage);
                     useMessage.getState().updateMessage({ id: tempId }, { isFailed: true });
                 } finally {
@@ -213,7 +210,7 @@ export default function useChat() {
             }
         } catch (error) {
             console.error("Error in retry attempt", error);
-            const errorMessage = error instanceof Error ? error.message : "Couldn't retry message";
+            const errorMessage = error instanceof Error ? error.message : String(error);
             toast.error(errorMessage);
         }
     }
@@ -227,10 +224,12 @@ export default function useChat() {
                 messageType: "Text",
                 partnerId,
             };
-            await sendMessage(payload, lastToken);
+            const res = await sendMessage(payload, lastToken);
+            if (!res.success) throw new Error(typeof res.error === "string" ? res.error : String(res.error ?? "Could not send wave"));
         } catch (err) {
             console.error("Error sending wave", err);
-            toast.error("Couldn't send wave", { description: "Please try again." });
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            toast.error(errorMessage);
         }
     }
 
@@ -313,6 +312,7 @@ export default function useChat() {
         message,
         isTyping,
         exitRoom,
+        messages,
         sendWave,
         scrollRef,
         isSending,
@@ -325,7 +325,6 @@ export default function useChat() {
         handleImageSelect,
         handleSendMessage,
         removePendingImage,
-        optimisticMessages,
         clearPendingImages,
     };
 }

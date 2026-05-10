@@ -24,7 +24,7 @@ const ChatCard = ({ message, onRetry }: { message: StoreMessage; onRetry: (m: St
     const isPending = useMessage((s) => s.pendingMessageIds.has(message.id));
 
     return (
-        <div key={message.id} className={cn("flex", isMine ? "justify-end" : "justify-start")}>
+        <div className={cn("flex", isMine ? "justify-end" : "justify-start")}>
             <div className="max-w-[clamp(30rem,60%,70%)] space-y-2">
                 <div>
                     {images.length > 0 && (

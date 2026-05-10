@@ -20,6 +20,7 @@ export default function OpenChatPanel() {
         user,
         message,
         isTyping,
+        messages,
         exitRoom,
         scrollRef,
         isSending,
@@ -33,7 +34,6 @@ export default function OpenChatPanel() {
         handleSendMessage,
         removePendingImage,
         clearPendingImages,
-        optimisticMessages,
     } = useChat();
 
     const router = useRouter();
@@ -109,14 +109,14 @@ export default function OpenChatPanel() {
                 </div>
             </header>
 
-            {optimisticMessages.length ? (
+            {messages.length ? (
                 <div className="scrollbar-thin scrollbar-track-background scrollbar-thumb-accent flex flex-1 flex-col-reverse overflow-y-auto">
                     <div className="mx-auto flex w-full max-w-4xl flex-col-reverse gap-4 p-6">
                         <div ref={scrollRef} />
-                        {optimisticMessages.map((message, index) => {
-                            const isNewDay = index === optimisticMessages.length - 1 || new Date(message.createdAt).toDateString() !== new Date(optimisticMessages[index + 1].createdAt).toDateString();
+                        {messages.map((message, index) => {
+                            const isNewDay = index === messages.length - 1 || new Date(message.createdAt).toDateString() !== new Date(messages[index + 1].createdAt).toDateString();
                             return (
-                                <div key={message.id}>
+                                <div key={message.id} className="contain-[layout]">
                                     {isNewDay && <p className="m-auto mb-4 w-fit rounded-full bg-white/10 px-4 py-1 text-xs">{formatDate(message.createdAt, "daySeparator")}</p>}
                                     <ChatCard message={message} onRetry={retryMessage} />
                                 </div>
@@ -166,17 +166,7 @@ export default function OpenChatPanel() {
             )}
 
             <form className="border-border bg-background flex items-center gap-3 border border-t px-4 py-5 shadow-sm" onSubmit={handleSendMessage}>
-                <input
-                    ref={imageInputRef}
-                    title="Upload image"
-                    id="image"
-                    name="image"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleImageSelect}
-                />
+                <input ref={imageInputRef} title="Upload image" id="image" name="image" type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
 
                 <Button type="button" variant="outline" size="icon" disabled={isSending} onClick={() => imageInputRef.current?.click()}>
                     <span className="sr-only">Upload image</span>
