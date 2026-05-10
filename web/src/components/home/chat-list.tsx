@@ -80,7 +80,7 @@ export default function ChatList() {
                     const isTyping = (typingUsers[room.id] || []).filter((uId) => uId !== user?.id).length > 0;
 
                     return (
-                        <Link href={"/" + room.id} key={room.id}>
+                        <Link href={"/chats/" + room.id} key={room.id}>
                             <article
                                 className={cn(isActive && "bg-primary/25", "hover:bg-accent/40 flex cursor-pointer items-center gap-3 p-4 transition sm:px-6")}
                             >
