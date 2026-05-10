@@ -7,7 +7,7 @@ import useUser from "@/store/user-store";
 import Image from "next/image";
 import { getInitials } from "@/utils/helper-functions";
 import { isLocal } from "@/constants/env";
-import { UserButton } from "@clerk/nextjs";
+// import { UserButton } from "@clerk/nextjs";
 
 const chatFilters = [
     { label: "All chats", count: 68, active: true },
@@ -52,7 +52,8 @@ export default function Filters() {
                         </div>
                     </>
                 ) : (
-                    <UserButton />
+                    // <UserButton />
+                    <p>Clerk User</p>
                 )}
             </div>
         </div>

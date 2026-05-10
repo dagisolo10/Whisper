@@ -63,3 +63,17 @@ export const getInitials = (name: string) =>
         .slice(0, 2)
         .map((letter) => letter[0].toUpperCase())
         .join("");
+
+export const sleep = async (delay: number, status: { success: boolean }) => {
+    await new Promise((resolve, reject) => {
+        setTimeout(() => {
+            switch (status.success) {
+                case true:
+                    resolve("Success");
+
+                case false:
+                    reject("Sleep reject");
+            }
+        }, delay);
+    });
+};

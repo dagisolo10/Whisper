@@ -9,6 +9,7 @@ type User = { id: string; name: string };
 
 const users: User[] = [
     { id: "user_3DIbL8PHZevVH7YX8SGNJ3CIi7X", name: "Ayakashi" },
+    { id: "user_3DJ0Jh3bc7f1cwet7Xb7UjX4Lfe", name: "Avenu Rollins" },
     { id: "user_2_alex", name: "Alex Rivera" },
     { id: "user_3_sarah", name: "Sarah Chen" },
     { id: "user_4_jordan", name: "Jordan Smith" },

@@ -3,14 +3,13 @@
 import useUser from "@/store/user-store";
 import { ReactNode, useEffect, useState } from "react";
 import useSocket from "@/store/socket-store";
-import { useAuth } from "@clerk/nextjs";
 import { isLocal } from "@/constants/env";
 import UltimateLoader from "@/components/loaders/loading-screen";
 
 export default function AuthWrapper({ children }: { children: ReactNode }) {
     const [isMounting, setIsMounting] = useState(true);
 
-    const { isLoaded, getToken, isSignedIn } = useAuth();
+    // const { isLoaded, getToken, isSignedIn } = useAuth();
 
     const user = useUser((s) => s.user);
     const loading = useUser((s) => s.loading);
@@ -19,14 +18,14 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
     const connectSocket = useSocket((s) => s.connectSocket);
     const disconnectSocket = useSocket((s) => s.disconnectSocket);
 
-    const isLoading = isMounting || (isLocal ? loading : !isLoaded || (isSignedIn && loading));
+    const isLoading = isMounting || loading; //(isLocal ? loading : !isLoaded || (isSignedIn && loading));
 
     useEffect(() => {
         if (isMounting) return;
-        if (!isLocal && (!isLoaded || !isSignedIn)) return;
+        // if (!isLocal && (!isLoaded || !isSignedIn)) return;
 
         const fetchUser = async () => {
-            const token = isLocal ? localStorage.getItem("test_user_id") : await getToken();
+            const token = isLocal ? localStorage.getItem("test_user_id") : ""; //await getToken();
 
             if (token) {
                 await getUser(token);
@@ -34,7 +33,7 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
         };
 
         fetchUser();
-    }, [getToken, getUser, isLoaded, isMounting, isSignedIn]);
+    }, [getUser, isMounting]);
 
     useEffect(() => {
         if (loading) return;
@@ -51,14 +50,14 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
 
         let active = true;
         (async () => {
-            const token = isLocal ? localStorage.getItem("test_user_id") : await getToken();
+            const token = isLocal ? localStorage.getItem("test_user_id") : ""; //await getToken();
             if (active && token) connectSocket(token);
         })();
 
         return () => {
             active = false;
         };
-    }, [connectSocket, getToken, isMounting, loading, user]);
+    }, [connectSocket, isMounting, loading, user]);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -68,7 +67,7 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
         return () => clearTimeout(timeout);
     }, []);
 
-    if (isLoading) return <UltimateLoader />;
+    if (isLoading && 1 + 1 === 21) return <UltimateLoader />;
 
     return children;
 }

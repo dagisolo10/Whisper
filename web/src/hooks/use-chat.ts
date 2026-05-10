@@ -1,11 +1,11 @@
 "use client";
 
 import { z } from "zod";
-import useMessage from "@/store/message-store";
+import useMessage, { StoreMessage } from "@/store/message-store";
 import useRoom from "@/store/room-store";
 import useSocket from "@/store/socket-store";
 import { MessagePayload } from "@/types/payloads";
-import { useState, useRef, SyntheticEvent, ChangeEvent, useMemo, useEffect } from "react";
+import { useState, useRef, SyntheticEvent, ChangeEvent, useMemo, useEffect, useOptimistic, startTransition } from "react";
 import { toast } from "sonner";
 import useUser from "@/store/user-store";
 import { PendingImage } from "@/types/media";
@@ -27,6 +27,8 @@ export default function useChat() {
     const onlineUsers = useSocket((s) => s.onlineUsers);
     const typingUsers = useSocket((s) => s.typingUsers);
     const sendMessage = useMessage((s) => s.sendMessage);
+
+    const [optimisticMessages, createOptimisticMessage] = useOptimistic(messages, (state, newMessage: StoreMessage) => [newMessage, ...state]);
 
     const [message, setMessage] = useState("");
     const [isSending, setIsSending] = useState(false);
@@ -73,43 +75,143 @@ export default function useChat() {
 
     async function handleSendMessage(e: SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (!activeRoom || !lastToken || isSending || !user || !socket || (!message.trim() && pendingImages.length === 0)) return;
+        const tempId = crypto.randomUUID();
+
+        const trimmedMessage = message.trim();
+        const currentMessageBackup = trimmedMessage;
+
+        if (!activeRoom || !lastToken || isSending || !user || !socket || (!trimmedMessage && pendingImages.length === 0)) return;
 
         setIsSending(true);
 
-        let sent = false;
+        const sendImage = async () => {
+            const formData = new FormData();
+
+            pendingImages.forEach((image) => formData.append("files", image.file));
+            formData.append("messageType", "Image");
+            formData.append("roomId", activeRoom.id);
+
+            if (trimmedMessage) {
+                formData.append("textContent", trimmedMessage);
+            }
+
+            try {
+                const res = await sendMessage(formData, lastToken);
+
+                if (!res.success && typeof res.error === "string") throw new Error(res.error);
+
+                clearPendingImages();
+            } catch (error) {
+                throw error;
+            }
+        };
+
+        const sendTextMessage = async () => {
+            setMessage("");
+
+            const payload: MessagePayload = {
+                messageType: "Text",
+                roomId: activeRoom.id,
+                textContent: trimmedMessage,
+            };
+
+            const optimisticMsg: StoreMessage = {
+                user,
+                id: tempId,
+                read: false,
+                imageUrls: [],
+                senderId: user.id,
+                messageType: "Text",
+                roomId: activeRoom.id,
+                textContent: trimmedMessage,
+                createdAt: new Date().toISOString(),
+            };
+
+            startTransition(async () => {
+                try {
+                    createOptimisticMessage(optimisticMsg);
+
+                    useMessage.getState().addPendingId(tempId);
+
+                    const res = await sendMessage(payload, lastToken);
+
+                    if (!res.success && typeof res.error === "string") throw new Error(res.error);
+                } catch (error) {
+                    console.error("Failed to send", error);
+                    const errorMessage = error instanceof Error ? error.message : "Failed to send";
+                    toast.error(errorMessage);
+                    useMessage.getState().addMessage({ ...optimisticMsg, isFailed: true });
+                } finally {
+                    useMessage.getState().removePendingId(tempId);
+                }
+            });
+        };
 
         try {
-            const trimmedMessage = message.trim();
-
             if (pendingImages.length > 0) {
-                const formData = new FormData();
-                pendingImages.forEach((image) => formData.append("files", image.file));
-                formData.append("messageType", "Image");
-                formData.append("roomId", activeRoom.id);
-                if (trimmedMessage) {
-                    formData.append("textContent", trimmedMessage);
-                }
-                await sendMessage(formData, lastToken);
-                clearPendingImages();
-                sent = true;
+                await sendImage();
             } else {
-                const payload: MessagePayload = {
-                    textContent: trimmedMessage,
-                    messageType: "Text",
-                    roomId: activeRoom.id,
-                };
-                await sendMessage(payload, lastToken);
-                sent = true;
+                await sendTextMessage();
             }
         } catch (error) {
             console.error("Error sending message", error);
-            toast.error("Couldn't send message", { description: "Please try again." });
+            const errorMessage = error instanceof Error ? error.message : "Couldn't send message";
+            toast.error(errorMessage, { description: "Please try again." });
+            setMessage(currentMessageBackup);
         } finally {
             setIsSending(false);
-            if (sent) setMessage("");
             socket.emit("stopTyping", activeRoom.id, user?.id);
             isTypingRef.current = false;
+        }
+    }
+
+    async function retryMessage(message: StoreMessage) {
+        if (!activeRoom || !lastToken || isSending || !user || !socket || !message) return;
+
+        const textRetry = async () => {
+            if (!message.textContent) return;
+
+            const payload: MessagePayload = {
+                roomId: message.roomId,
+                messageType: message.messageType,
+                textContent: message.textContent,
+            };
+
+            startTransition(async () => {
+                try {
+                    useMessage.getState().addPendingId(message.id);
+                    useMessage.getState().updateMessage({ id: message.id }, { isFailed: false });
+
+                    const res = await sendMessage(payload, lastToken);
+
+                    if (!res.success && typeof res.error === "string") throw new Error(res.error);
+                } catch (error) {
+                    console.error("Retry failed", error);
+                    const errorMessage = error instanceof Error ? error.message : "Retry failed";
+                    toast.error(errorMessage);
+                    useMessage.getState().updateMessage({ id: message.id }, { isFailed: true });
+                } finally {
+                    useMessage.getState().removePendingId(message.id);
+                }
+            });
+        };
+
+        const imageRetry = async () => {
+            if (message.imageUrls.length === 0) return;
+        };
+
+        try {
+            switch (message.messageType) {
+                case "Text":
+                    await textRetry();
+
+                case "Image":
+                    await imageRetry();
+            }
+        } catch (error) {
+            console.error("Error in retry attempt", error);
+            const errorMessage = error instanceof Error ? error.message : "Couldn't retry message";
+            toast.error(errorMessage);
         }
     }
 
@@ -207,7 +309,6 @@ export default function useChat() {
         user,
         message,
         isTyping,
-        messages,
         exitRoom,
         sendWave,
         scrollRef,
@@ -215,11 +316,13 @@ export default function useChat() {
         activeRoom,
         onlineUsers,
         handleTyping,
+        retryMessage,
         imageInputRef,
         pendingImages,
         handleImageSelect,
         handleSendMessage,
         removePendingImage,
+        optimisticMessages,
         clearPendingImages,
     };
 }

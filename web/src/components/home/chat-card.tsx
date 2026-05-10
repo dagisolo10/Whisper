@@ -1,29 +1,27 @@
 "use client";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { CheckCheck, Check } from "lucide-react";
-import { Message } from "@/types/model";
+import { AlertCircle, Check, Clock } from "lucide-react";
 import useUser from "@/store/user-store";
 import { formatDate } from "@/utils/helper-functions";
 import { resolveMediaUrl } from "@/lib/media";
 import { ImageCarousel } from "../image-carousel";
+import useMessage, { StoreMessage } from "@/store/message-store";
+import useChat from "@/hooks/use-chat";
 
-export default function ChatCard({ message }: { message: Message }) {
+export default function ChatCard({ message }: { message: StoreMessage }) {
     const { user } = useUser();
     const isMine = message.senderId === user?.id;
-    const Icon = message.read ? CheckCheck : Check;
     const hasImage = message.messageType === "Image" && message.imageUrls.length > 0;
     const cardStyle = isMine ? "bg-primary/50 text-primary-foreground" : "bg-card";
-    const corners =
-        hasImage && isMine ? "rounded-bl-lg" : hasImage && !isMine ? "rounded-br-lg" : isMine ? "rounded-t-lg rounded-bl-lg" : "rounded-t-lg rounded-br-lg";
+    const corners = hasImage && isMine ? "rounded-bl-lg" : hasImage && !isMine ? "rounded-br-lg" : isMine ? "rounded-t-lg rounded-bl-lg" : "rounded-t-lg rounded-br-lg";
 
-    const images = hasImage ? message.imageUrls : [];
     const text = message.textContent;
-    const galleryImages = images.map((imageUrl, index) => ({
-        id: `${message.id}-${index}`,
-        src: resolveMediaUrl(imageUrl) ?? imageUrl,
-        alt: `Sent image ${index + 1}`,
-    }));
+    const images = hasImage ? message.imageUrls : [];
+    const galleryImages = images.map((imageUrl, index) => ({ id: `${message.id}-${index}`, src: resolveMediaUrl(imageUrl) ?? imageUrl, alt: `Sent image ${index + 1}` }));
+
+    const isPending = useMessage((s) => s.pendingMessageIds.has(message.id));
+    const { retryMessage } = useChat();
 
     return (
         <div key={message.id} className={cn("flex", isMine ? "justify-end" : "justify-start")}>
@@ -61,13 +59,32 @@ export default function ChatCard({ message }: { message: Message }) {
                         </div>
                     )}
                 </div>
-                <div className={cn("flex", isMine ? "justify-end" : "justify-start")}>
-                    <p className={cn("text-muted-foreground px-2 text-xs", isMine ? "text-right" : "text-left")}>
-                        {formatDate(message.createdAt, "messageSent")}
-                    </p>
-                    <Icon className={cn(message.read ? "text-emerald-500" : "text-destructive", isMine ? "block" : "hidden", "size-4")} />
+                <div className={cn("flex items-center", isMine ? "justify-end" : "justify-start")}>
+                    <p className={cn("text-muted-foreground px-2 text-xs", isMine ? "text-right" : "text-left")}>{formatDate(message.createdAt, "messageSent")}</p>
+
+                    {isPending ? (
+                        <Clock className="text-muted-foreground size-3" />
+                    ) : message.isFailed ? (
+                        <button onClick={async () => await retryMessage(message)} className="text-destructive flex items-center gap-1 transition-all hover:underline active:scale-95">
+                            <span className="text-[10px] font-medium">Retry</span>
+                            <AlertCircle className="size-3" />
+                        </button>
+                    ) : message.read ? (
+                        <DoubleCheck isMine={isMine} />
+                    ) : (
+                        <Check className={cn("text-destructive size-3", isMine ? "block" : "hidden")} />
+                    )}
                 </div>
             </div>
+        </div>
+    );
+}
+
+function DoubleCheck({ isMine }: { isMine: boolean }) {
+    return (
+        <div className="relative size-3 bg-white/0">
+            <Check className={cn("absolute left-px size-3 text-emerald-500", isMine ? "block" : "hidden")} />
+            <Check className={cn("absolute right-px size-3 text-emerald-500", isMine ? "block" : "hidden")} />
         </div>
     );
 }

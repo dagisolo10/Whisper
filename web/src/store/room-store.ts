@@ -1,9 +1,9 @@
 import useSocket from "./socket-store";
-import useMessage from "./message-store";
+import useMessage, { StoreMessage } from "./message-store";
 
 import api from "@/lib/axios";
 import { create } from "zustand";
-import { Message, Room } from "@/types/model";
+import { Room } from "@/types/model";
 import { RoomPayload } from "@/types/payloads";
 import { ConversationRoomResponse, CreateRoomResponse, RoomsResponse } from "@/types/response";
 
@@ -19,7 +19,7 @@ interface RoomStore {
     addRoom: (room: Room) => void;
 
     getRooms: (token: string) => Promise<void>;
-    updateRoomPreview: (message: Message) => void;
+    updateRoomPreview: (message: StoreMessage) => void;
     getConversation: (roomId: string, token: string) => Promise<{ success: boolean }>;
     createRoom: (payload: RoomPayload, token: string) => Promise<Room | undefined>;
 }
@@ -100,8 +100,8 @@ const useRoom = create<RoomStore>((set, get) => ({
                 socket.emit("joinRoom", roomId);
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { messages, ...roomWithoutMessages } = data.data;
+            const serverMessages: StoreMessage[] = messages.map((msg) => ({ ...msg, isFailed: false })) || [];
 
             set((state) => ({
                 activeRoomId: roomId,
@@ -109,7 +109,7 @@ const useRoom = create<RoomStore>((set, get) => ({
                 rooms: state.rooms.map((room) => (room.id === roomId ? { ...room, unreadCount: 0 } : room)),
             }));
 
-            useMessage.getState().setMessages(data.data.messages || []);
+            useMessage.getState().setMessages(serverMessages);
 
             return { success: true };
         } catch (err) {

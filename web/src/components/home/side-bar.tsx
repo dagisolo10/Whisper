@@ -2,7 +2,7 @@
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { UserButton, useUser as useClerkUser } from "@clerk/nextjs";
+// import { UserButton, useUser as useClerkUser } from "@clerk/nextjs";
 import { Bell, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import useUtil from "@/store/util-store";
@@ -16,7 +16,7 @@ const sidebarLinks = [
 export default function Sidebar() {
     const pathname = usePathname();
     const sidebar = useUtil((s) => s.sidebar);
-    const { user: clerkUser } = useClerkUser();
+    // const { user: clerkUser } = useClerkUser();
     const setSidebar = useUtil((s) => s.setSidebar);
     const toggleSidebar = useUtil((s) => s.toggleSidebar);
 
@@ -59,13 +59,13 @@ export default function Sidebar() {
                     ))}
                 </nav>
 
-                <div className="mt-auto flex items-center gap-4 px-2">
+                {/* <div className="mt-auto flex items-center gap-4 px-2">
                     <UserButton />
                     <div>
                         <p className="text-sm font-semibold">{clerkUser?.fullName || "Whisper"}</p>
                         <p className="text-muted-foreground text-[11px]">{clerkUser?.primaryEmailAddress?.emailAddress || "Signed in"}</p>
                     </div>
-                </div>
+                </div> */}
             </aside>
         </div>
     );

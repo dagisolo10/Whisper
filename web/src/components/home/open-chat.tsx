@@ -20,7 +20,6 @@ export default function OpenChatPanel() {
         user,
         message,
         isTyping,
-        messages,
         exitRoom,
         scrollRef,
         isSending,
@@ -33,6 +32,7 @@ export default function OpenChatPanel() {
         handleSendMessage,
         removePendingImage,
         clearPendingImages,
+        optimisticMessages,
     } = useChat();
 
     const router = useRouter();
@@ -63,11 +63,7 @@ export default function OpenChatPanel() {
                                 unoptimized
                             />
                         ) : (
-                            <div
-                                className={cn(
-                                    "border-primary flex size-8 shrink-0 items-center justify-center rounded-full border bg-linear-to-br text-xs font-semibold text-white shadow-sm",
-                                )}
-                            >
+                            <div className={cn("border-primary flex size-8 shrink-0 items-center justify-center rounded-full border bg-linear-to-br text-xs font-semibold text-white shadow-sm")}>
                                 {avatar}
                             </div>
                         )}
@@ -95,7 +91,7 @@ export default function OpenChatPanel() {
                         className="rounded-full"
                         onClick={() => {
                             exitRoom();
-                            router.push("/");
+                            router.push("/chats");
                         }}
                     >
                         <X className="size-4" />
@@ -112,21 +108,15 @@ export default function OpenChatPanel() {
                 </div>
             </header>
 
-            {messages.length ? (
+            {optimisticMessages.length ? (
                 <div className="scrollbar-thin scrollbar-track-background scrollbar-thumb-accent flex flex-1 flex-col-reverse overflow-y-auto">
                     <div className="mx-auto flex w-full max-w-4xl flex-col-reverse gap-4 p-6">
                         <div ref={scrollRef} />
-                        {messages.map((message, index) => {
-                            const isNewDay =
-                                index === messages.length - 1 ||
-                                new Date(message.createdAt).toDateString() !== new Date(messages[index + 1].createdAt).toDateString();
+                        {optimisticMessages.map((message, index) => {
+                            const isNewDay = index === optimisticMessages.length - 1 || new Date(message.createdAt).toDateString() !== new Date(optimisticMessages[index + 1].createdAt).toDateString();
                             return (
                                 <div key={message.id}>
-                                    {isNewDay && (
-                                        <p className="m-auto mb-4 w-fit rounded-full bg-white/10 px-4 py-1 text-xs">
-                                            {formatDate(message.createdAt, "daySeparator")}
-                                        </p>
-                                    )}
+                                    {isNewDay && <p className="m-auto mb-4 w-fit rounded-full bg-white/10 px-4 py-1 text-xs">{formatDate(message.createdAt, "daySeparator")}</p>}
                                     <ChatCard message={message} />
                                 </div>
                             );
@@ -146,13 +136,7 @@ export default function OpenChatPanel() {
                             alt: image.file.name || `Selected image ${index + 1}`,
                         }))}
                         renderActions={({ activeIndex, closePreview }) => (
-                            <ImageOptions
-                                imageInputRef={imageInputRef}
-                                pendingImages={pendingImages}
-                                activeIndex={activeIndex}
-                                removePendingImage={removePendingImage}
-                                closePreview={closePreview}
-                            />
+                            <ImageOptions imageInputRef={imageInputRef} pendingImages={pendingImages} activeIndex={activeIndex} removePendingImage={removePendingImage} closePreview={closePreview} />
                         )}
                     >
                         {({ openPreview }) => (

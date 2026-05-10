@@ -38,19 +38,13 @@ const useSocket = create<SocketStore>((set, get) => ({
         socket.auth = { token };
 
         socket.off("connect");
-        socket.on("connect", () => {
-            console.log("Socket connected:", socket.id, "url:", baseUrl);
-        });
+        socket.on("connect", () => console.log("Socket connected:", socket.id, "url:", baseUrl));
 
         socket.off("connect_error");
-        socket.on("connect_error", (error) => {
-            console.error("Socket connection error:", error.message);
-        });
+        socket.on("connect_error", (error) => console.error("Socket connection error:", error.message));
 
         socket.off("disconnect");
-        socket.on("disconnect", (reason) => {
-            console.log("Socket disconnected:", reason);
-        });
+        socket.on("disconnect", (reason) => console.log("Socket disconnected:", reason));
 
         socket.off("onlineUsers");
         socket.on("onlineUsers", (userIds) => {
@@ -100,58 +94,36 @@ const useSocket = create<SocketStore>((set, get) => ({
 
         socket.off("messageRead");
         socket.on("messageRead", (roomId) => {
-            const user = useUser.getState().user;
-            const readMessages = useMessage
-                .getState()
-                .messages.map((msg) => (msg.roomId === roomId && msg.senderId === user?.id ? { ...msg, read: true } : msg));
-            useMessage.getState().setMessages(readMessages);
+            useMessage.getState().updateMessage({ roomId, senderId: useUser.getState().user?.id }, { read: true });
         });
 
         socket.off("messageEdited");
         socket.on("messageEdited", (updatedMessage) => {
-            const updated = useMessage.getState().messages.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg));
-            useMessage.getState().setMessages(updated);
+            useMessage.getState().updateMessage({ id: updatedMessage.id }, updatedMessage);
         });
 
         socket.off("messageDeleted");
         socket.on("messageDeleted", (messageId: string) => {
-            const updated = useMessage.getState().messages.filter((msg) => msg.id !== messageId);
-            useMessage.getState().setMessages(updated);
+            useMessage.getState().removeMessage(messageId);
         });
 
         socket.off("userStartedTyping");
         socket.on("userStartedTyping", (userId: string, roomId: string) => {
-            set((state) => ({
-                typingUsers: {
-                    ...state.typingUsers,
-                    [roomId]: Array.from(new Set([...(state.typingUsers[roomId] || []), userId])),
-                },
-            }));
+            set((state) => ({ typingUsers: { ...state.typingUsers, [roomId]: Array.from(new Set([...(state.typingUsers[roomId] || []), userId])) } }));
         });
 
         socket.off("userStoppedTyping");
         socket.on("userStoppedTyping", (userId, roomId) => {
-            set((state) => ({
-                typingUsers: {
-                    ...state.typingUsers,
-                    [roomId]: (state.typingUsers[roomId] || []).filter((id) => id !== userId),
-                },
-            }));
+            set((state) => ({ typingUsers: { ...state.typingUsers, [roomId]: (state.typingUsers[roomId] || []).filter((id) => id !== userId) } }));
         });
 
         socket.off("roomJoinError");
-        socket.on("roomJoinError", (roomId, message) => {
-            console.error(`Failed to join room ${roomId}: ${message}`);
-        });
+        socket.on("roomJoinError", (roomId, message) => console.error(`Failed to join room ${roomId}: ${message}`));
 
         socket.off("roomLeaveError");
-        socket.on("roomLeaveError", (roomId, message) => {
-            console.error(`Failed to leave room ${roomId}: ${message}`);
-        });
+        socket.on("roomLeaveError", (roomId, message) => console.error(`Failed to leave room ${roomId}: ${message}`));
 
-        if (!socket.connected) {
-            socket.connect();
-        }
+        if (!socket.connected) socket.connect();
 
         set({ socket });
     },
