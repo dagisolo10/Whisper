@@ -20,6 +20,7 @@ const imageListSchema = z.array(imageSchema).min(1, "Please select at least one 
 export default function useChat() {
     const user = useUser((s) => s.user);
     const socket = useSocket((s) => s.socket);
+    const exitRoom = useRoom((s) => s.exitRoom);
     const lastToken = useUser((s) => s.lastToken);
     const messages = useMessage((s) => s.messages);
     const activeRoom = useRoom((s) => s.activeRoom);
@@ -207,6 +208,7 @@ export default function useChat() {
         message,
         isTyping,
         messages,
+        exitRoom,
         sendWave,
         scrollRef,
         isSending,

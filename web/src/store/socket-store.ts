@@ -70,20 +70,20 @@ const useSocket = create<SocketStore>((set, get) => ({
         socket.off("newMessage");
         socket.on("newMessage", async (message, roomId) => {
             const user = useAuthStore.getState().user;
-            const activeRoomId = useRoom.getState().activeRoomId;
+            const currentActiveRoomId = useRoom.getState().activeRoomId;
             const currentMessages = useMessage.getState().messages;
 
             const exists = currentMessages.some((msg) => msg.id === message.id);
             if (exists) return;
 
-            if (message.roomId === activeRoomId) {
+            if (message.roomId === currentActiveRoomId) {
                 useMessage.getState().addMessage(message);
                 if (message.senderId !== user?.id) {
                     socket.emit("markAsRead", roomId);
                 }
             }
 
-            if (message.roomId !== activeRoomId && message.senderId !== user?.id) {
+            if (message.roomId !== currentActiveRoomId && message.senderId !== user?.id) {
                 const permission = await Notification.requestPermission();
                 if (permission === "granted") {
                     showNotification(message);

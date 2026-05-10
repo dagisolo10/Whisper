@@ -22,21 +22,18 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
     const isLoading = isMounting || !isLoaded || (isSignedIn && loading);
 
     useEffect(() => {
-        if (isMounting || !isLoaded) return;
+        if (isMounting || !isLoaded || !isSignedIn) return;
 
         const fetchUser = async () => {
             const token = isLocal ? localStorage.getItem("test_user_id") : await getToken();
 
             if (token) {
                 await getUser(token);
-            } else if (!isLocal && !isSignedIn) {
-                clearUser();
-                disconnectSocket();
             }
         };
 
         fetchUser();
-    }, [isLoaded, isMounting, isSignedIn, getToken, getUser, clearUser, disconnectSocket]);
+    }, [getToken, getUser, isLoaded, isMounting, isSignedIn]);
 
     useEffect(() => {
         if (loading) return;
@@ -65,7 +62,7 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
     useEffect(() => {
         const timeout = setTimeout(() => {
             setIsMounting(false);
-        }, 500);
+        }, 1000);
 
         return () => clearTimeout(timeout);
     }, []);

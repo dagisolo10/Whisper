@@ -15,6 +15,7 @@ interface RoomStore {
     fetchingRooms: boolean;
     fetchingChat: boolean;
 
+    exitRoom: () => void;
     addRoom: (room: Room) => void;
 
     getRooms: (token: string) => Promise<void>;
@@ -23,12 +24,21 @@ interface RoomStore {
     createRoom: (payload: RoomPayload, token: string) => Promise<Room | undefined>;
 }
 
-const useRoom = create<RoomStore>((set) => ({
+const useRoom = create<RoomStore>((set, get) => ({
     rooms: [],
     activeRoom: null,
     activeRoomId: null,
     fetchingChat: false,
     fetchingRooms: false,
+
+    exitRoom: () => {
+        const { activeRoomId } = get();
+        const socket = useSocket.getState().socket;
+        if (activeRoomId && socket) {
+            socket.emit("leaveRoom", activeRoomId);
+        }
+        set({ activeRoom: null, activeRoomId: null });
+    },
 
     addRoom: (room) => {
         set((state) => {
