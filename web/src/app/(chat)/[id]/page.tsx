@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import OpenChatPanel from "@/components/home/open-chat";
 import useUser from "@/store/auth-store";
 import Skeleton from "@/components/skeleton";
-import NoChatSelected from "../chat/page";
+import NoChatSelected from "../page";
 
 export default function ChatPage() {
     const params = useParams();
