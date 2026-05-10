@@ -59,7 +59,7 @@ export default function useNoOpenChat() {
                     loading: "Starting conversation...",
                     success: (data) => {
                         if (!data) throw new Error("Failed to create room");
-                        router.push(`/${data.id}`);
+                        router.push(`/chats/${data.id}`);
                         return "Conversation started";
                     },
                     error: (err: string) => err || "Failed to start conversation",
