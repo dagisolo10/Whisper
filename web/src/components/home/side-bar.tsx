@@ -3,14 +3,13 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { UserButton, useUser as useClerkUser } from "@clerk/nextjs";
-import { Bell, Compass, MessageCircle } from "lucide-react";
+import { Bell, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import useUtil from "@/store/util-store";
 import { DevUserSwitch } from "../dev-switch";
 
 const sidebarLinks = [
     { label: "Chats", icon: MessageCircle, href: "/" },
-    { label: "Discover", icon: Compass, href: "/discover" },
     { label: "Notifications", icon: Bell, href: "/notifications" },
 ];
 
@@ -42,15 +41,6 @@ export default function Sidebar() {
                     "bg-background absolute top-0 left-0 flex h-full w-1/4 flex-col gap-4 border-r px-4 py-6 transition-transform duration-500",
                 )}
             >
-                <div className="flex items-center gap-4 px-2">
-                    <UserButton />
-
-                    <div>
-                        <p className="text-sm font-semibold">{clerkUser?.fullName || "Whisper"}</p>
-                        <p className="text-muted-foreground text-[11px]">{clerkUser?.primaryEmailAddress?.emailAddress || "Signed in"}</p>
-                    </div>
-                </div>
-
                 <DevUserSwitch />
 
                 <nav className="space-y-2">
@@ -68,6 +58,14 @@ export default function Sidebar() {
                         </Button>
                     ))}
                 </nav>
+
+                <div className="mt-auto flex items-center gap-4 px-2">
+                    <UserButton />
+                    <div>
+                        <p className="text-sm font-semibold">{clerkUser?.fullName || "Whisper"}</p>
+                        <p className="text-muted-foreground text-[11px]">{clerkUser?.primaryEmailAddress?.emailAddress || "Signed in"}</p>
+                    </div>
+                </div>
             </aside>
         </div>
     );

@@ -1,16 +1,18 @@
 "use client";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import useRoom from "@/store/room-store";
 import { useEffect } from "react";
 import OpenChatPanel from "@/components/home/open-chat";
-import useUser from "@/store/auth-store";
+import useUser from "@/store/user-store";
 import Skeleton from "@/components/skeleton";
 import NoChatSelected from "../page";
+import { toast } from "sonner";
 
 export default function ChatPage() {
     const params = useParams();
     const roomId = params.id as string;
+    const router = useRouter();
 
     const lastToken = useUser((s) => s.lastToken);
     const fetchingChat = useRoom((s) => s.fetchingChat);
@@ -21,8 +23,16 @@ export default function ChatPage() {
     const isLoading = fetchingChat || (activeRoomId !== roomId && !hasError);
 
     useEffect(() => {
-        if (roomId) getConversation(roomId, lastToken ?? "");
-    }, [roomId, getConversation, lastToken]);
+        (async () => {
+            if (roomId && lastToken) {
+                const result = await getConversation(roomId, lastToken);
+                if (!result.success) {
+                    toast.error("Chat not found");
+                    router.replace("/");
+                }
+            }
+        })();
+    }, [roomId, getConversation, lastToken, router]);
 
     return (
         <div className="relative h-screen w-full overflow-hidden">

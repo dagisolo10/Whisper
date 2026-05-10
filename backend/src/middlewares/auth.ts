@@ -6,9 +6,9 @@ export default async function protect(req: Request, res: Response, next: NextFun
         const { userId } = getAuth(req);
         const testId = req.headers["x-test-user-id"] as string;
 
-        const allowTestAuth = process.env.NODE_ENV === "development" && process.env.ALLOW_TEST_AUTH === "true";
+        const isLocal = process.env.NODE_ENV === "development" && process.env.LOCAL === "true";
 
-        if (allowTestAuth && typeof testId === "string" && testId.trim()) {
+        if (isLocal && typeof testId === "string" && testId.trim()) {
             req.userId = testId;
             return next();
         }

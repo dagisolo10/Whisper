@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const noAuth = process.env.NEXT_PUBLIC_NO_AUTH === "true";
+import { isLocal } from "@/constants/env";
 
 const getTestId = () => {
     if (typeof window !== "undefined") return localStorage.getItem("test_user_id");
@@ -15,7 +14,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
     const testId = getTestId();
-    if (noAuth && testId) config.headers["x-test-user-id"] = testId;
+    if (isLocal && testId) config.headers["x-test-user-id"] = testId;
 
     return config;
 });

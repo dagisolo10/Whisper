@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
-import Loader from "@/components/loader";
+import Loader from "@/components/loaders/loader";
 import { BaseProp } from "@/hooks/use-forgot-password";
 
 interface EmailProp extends BaseProp {

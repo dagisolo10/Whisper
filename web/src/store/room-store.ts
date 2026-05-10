@@ -19,7 +19,7 @@ interface RoomStore {
 
     getRooms: (token: string) => Promise<void>;
     updateRoomPreview: (message: Message) => void;
-    getConversation: (roomId: string, token: string) => Promise<void>;
+    getConversation: (roomId: string, token: string) => Promise<{ success: boolean }>;
     createRoom: (payload: RoomPayload, token: string) => Promise<Room | undefined>;
 }
 
@@ -70,11 +70,7 @@ const useRoom = create<RoomStore>((set) => ({
     },
 
     getConversation: async (roomId, token) => {
-        set({
-            fetchingChat: true,
-            activeRoomId: null,
-            activeRoom: null,
-        });
+        set({ fetchingChat: true, activeRoomId: null, activeRoom: null });
 
         await new Promise((resolve) => setTimeout(resolve, 300));
 
@@ -104,9 +100,12 @@ const useRoom = create<RoomStore>((set) => ({
             }));
 
             useMessage.getState().setMessages(data.data.messages || []);
+
+            return { success: true };
         } catch (err) {
             console.error("Error fetching conversation", err);
             set({ activeRoom: null, activeRoomId: null });
+            return { success: false };
         } finally {
             set({ fetchingChat: false });
         }

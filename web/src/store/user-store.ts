@@ -19,8 +19,8 @@ interface AuthStore {
     setUser: (user: User) => void;
     getUser: (token: string) => Promise<void>;
 
-    searchUser: (query: string, token: string) => Promise<User[]>;
     updateUser: (payload: UpdateUserPayload) => Promise<void>;
+    searchUser: (query: string, token: string) => Promise<User[]>;
 
     clearUser: () => void;
     retryUser: () => Promise<void>;

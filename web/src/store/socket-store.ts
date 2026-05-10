@@ -3,7 +3,7 @@ import useMessage from "./message-store";
 
 import { create } from "zustand";
 import { io, Socket } from "socket.io-client";
-import useAuthStore from "@/store/auth-store";
+import useAuthStore from "@/store/user-store";
 import showNotification from "@/lib/notification";
 import { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-events";
 
