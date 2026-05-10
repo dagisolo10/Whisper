@@ -19,17 +19,24 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
     const connectSocket = useSocket((s) => s.connectSocket);
     const disconnectSocket = useSocket((s) => s.disconnectSocket);
 
-    const isLoading = isMounting || (isLocal ? loading : !isLoaded || (isSignedIn && loading));
+    const isLoading = isMounting || !isLoaded || (isSignedIn && loading);
 
     useEffect(() => {
-        if (isMounting || (!isLocal && (!isLoaded || !isSignedIn))) return;
+        if (isMounting || !isLoaded) return;
 
-        (async () => {
+        const fetchUser = async () => {
             const token = isLocal ? localStorage.getItem("test_user_id") : await getToken();
-            console.log(token);
-            if (token) await getUser(token);
-        })();
-    }, [getToken, getUser, isLoaded, isMounting, isSignedIn]);
+
+            if (token) {
+                await getUser(token);
+            } else if (!isLocal && !isSignedIn) {
+                clearUser();
+                disconnectSocket();
+            }
+        };
+
+        fetchUser();
+    }, [isLoaded, isMounting, isSignedIn, getToken, getUser, clearUser, disconnectSocket]);
 
     useEffect(() => {
         if (loading) return;
@@ -42,7 +49,7 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
     }, [clearUser, disconnectSocket, loading, user]);
 
     useEffect(() => {
-        if (!user || loading) return;
+        if (!user || loading || isMounting) return;
 
         let active = true;
         (async () => {
@@ -53,12 +60,12 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
         return () => {
             active = false;
         };
-    }, [connectSocket, getToken, loading, user]);
+    }, [connectSocket, getToken, isMounting, loading, user]);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
             setIsMounting(false);
-        }, 800);
+        }, 500);
 
         return () => clearTimeout(timeout);
     }, []);

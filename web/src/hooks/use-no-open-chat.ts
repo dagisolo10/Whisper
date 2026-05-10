@@ -23,8 +23,6 @@ export default function useNoOpenChat() {
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     function handleQueryChange(e: ChangeEvent<HTMLInputElement>) {
-        if (!lastToken) return;
-
         const value = e.target.value;
         setQuery(value);
 
@@ -34,6 +32,8 @@ export default function useNoOpenChat() {
             const currentRequestId = ++requestIdRef.current;
 
             timeoutRef.current = setTimeout(async () => {
+                if (!lastToken) return;
+
                 const result = await searchUser(value, lastToken);
                 if (currentRequestId === requestIdRef.current) {
                     setResult(result);
