@@ -65,7 +65,7 @@ export default function useNoOpenChat() {
                     error: (err: string) => err || "Failed to start conversation",
                 });
             } else {
-                router.push(`/${room.id}`);
+                router.push(`/chats/${room.id}`);
             }
         } catch (error) {
             console.error("Navigation error:", error);

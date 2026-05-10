@@ -80,12 +80,12 @@ const useSocket = create<SocketStore>((set, get) => ({
                 useMessage.getState().addMessage(message);
                 if (message.senderId !== user?.id) {
                     socket.emit("markAsRead", roomId);
-                }
 
-                const popSound = new Audio("/sounds/message pop.mp3");
-                popSound.currentTime = 0;
-                popSound.play();
-                popSound.play().catch((e) => console.error("Pop sound failed to play", e));
+                    const popSound = new Audio("/sounds/message pop.mp3");
+                    popSound.currentTime = 0;
+                    popSound.play();
+                    popSound.play().catch((e) => console.error("Pop sound failed to play", e));
+                }
             }
 
             if (message.roomId !== currentActiveRoomId && message.senderId !== user?.id) {
