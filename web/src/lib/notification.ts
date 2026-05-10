@@ -26,7 +26,13 @@ export default function showNotification(message: Message) {
     notificationSound.currentTime = 0;
     notificationSound.play().catch((e) => console.error("Notification sound failed to play", e));
 
-    notification.onclick = () => {
+    notification.onclick = (e) => {
+        e.preventDefault();
+
+        const url = `${window.location.origin}/chats/${message.roomId}`;
+
+        window.open(url, "_blank");
+
         window.focus();
         notification.close();
     };
