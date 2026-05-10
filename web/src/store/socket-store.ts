@@ -2,8 +2,8 @@ import useRoom from "./room-store";
 import useMessage from "./message-store";
 
 import { create } from "zustand";
+import useUser from "@/store/user-store";
 import { io, Socket } from "socket.io-client";
-import useAuthStore from "@/store/auth-store";
 import showNotification from "@/lib/notification";
 import { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-events";
 
@@ -69,21 +69,21 @@ const useSocket = create<SocketStore>((set, get) => ({
 
         socket.off("newMessage");
         socket.on("newMessage", async (message, roomId) => {
-            const user = useAuthStore.getState().user;
-            const activeRoomId = useRoom.getState().activeRoomId;
+            const user = useUser.getState().user;
+            const currentActiveRoomId = useRoom.getState().activeRoomId;
             const currentMessages = useMessage.getState().messages;
 
             const exists = currentMessages.some((msg) => msg.id === message.id);
             if (exists) return;
 
-            if (message.roomId === activeRoomId) {
+            if (message.roomId === currentActiveRoomId) {
                 useMessage.getState().addMessage(message);
                 if (message.senderId !== user?.id) {
                     socket.emit("markAsRead", roomId);
                 }
             }
 
-            if (message.roomId !== activeRoomId && message.senderId !== user?.id) {
+            if (message.roomId !== currentActiveRoomId && message.senderId !== user?.id) {
                 const permission = await Notification.requestPermission();
                 if (permission === "granted") {
                     showNotification(message);
@@ -95,7 +95,7 @@ const useSocket = create<SocketStore>((set, get) => ({
 
         socket.off("messageRead");
         socket.on("messageRead", (roomId) => {
-            const user = useAuthStore.getState().user;
+            const user = useUser.getState().user;
             const readMessages = useMessage
                 .getState()
                 .messages.map((msg) => (msg.roomId === roomId && msg.senderId === user?.id ? { ...msg, read: true } : msg));

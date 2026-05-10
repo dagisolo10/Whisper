@@ -1,7 +1,7 @@
 "use client";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import useUser from "@/store/auth-store";
+import useUser from "@/store/user-store";
 import useRoom from "@/store/room-store";
 import { toast } from "sonner";
 import { User } from "@/types/model";
@@ -32,7 +32,12 @@ export default function useNoOpenChat() {
             const currentRequestId = ++requestIdRef.current;
 
             timeoutRef.current = setTimeout(async () => {
-                const result = await searchUser(value, lastToken ?? "");
+                if (!lastToken) {
+                    setResult([]);
+                    return;
+                }
+
+                const result = await searchUser(value, lastToken);
                 if (currentRequestId === requestIdRef.current) {
                     setResult(result);
                 }
@@ -43,14 +48,14 @@ export default function useNoOpenChat() {
     }
 
     async function handleUserClick(partnerId: string) {
-        if (isCreating) return;
+        if (isCreating || !lastToken) return;
         setIsCreating(true);
 
         try {
             const room = rooms.find((room) => room.members.some((mem) => mem.userId === partnerId));
 
             if (!room) {
-                toast.promise(createRoom({ partnerId }, lastToken ?? ""), {
+                toast.promise(createRoom({ partnerId }, lastToken), {
                     loading: "Starting conversation...",
                     success: (data) => {
                         if (!data) throw new Error("Failed to create room");

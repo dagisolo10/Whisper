@@ -1,13 +1,13 @@
 import { ReactNode } from "react";
+import { isLocal } from "@/constants/env";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Side from "@/components/auth/ui/side";
 
 export default async function AuthLayout({ children }: { children: ReactNode }) {
-    const noAuth = process.env.NEXT_PUBLIC_NO_AUTH === "true";
     const { userId } = await auth();
 
-    if (userId && !noAuth) return redirect("/");
+    if (userId && !isLocal) return redirect("/");
 
     return (
         <main className="min-h-screen p-3 sm:p-4 lg:p-6">

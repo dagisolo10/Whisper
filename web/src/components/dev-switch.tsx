@@ -2,7 +2,8 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
-import useUser from "@/store/auth-store";
+import useUser from "@/store/user-store";
+import { isLocal } from "@/constants/env";
 
 type User = { id: string; name: string };
 
@@ -32,7 +33,7 @@ export function DevUserSwitch() {
         window.location.reload();
     };
 
-    if (process.env.NEXT_PUBLIC_NO_AUTH !== "true") return null;
+    if (!isLocal) return null;
 
     return (
         <div className="space-y-4 overflow-hidden rounded-4xl border px-6 py-4" onClick={() => setShowAll((curr) => !curr)}>

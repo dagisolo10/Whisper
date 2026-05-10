@@ -1,13 +1,15 @@
 "use client";
 
-import useUser from "@/store/auth-store";
-import { ReactNode, useEffect } from "react";
-import Loader from "../loader";
+import useUser from "@/store/user-store";
+import { ReactNode, useEffect, useState } from "react";
 import useSocket from "@/store/socket-store";
 import { useAuth } from "@clerk/nextjs";
+import { isLocal } from "@/constants/env";
+import UltimateLoader from "@/components/loaders/loading-screen";
 
 export default function AuthWrapper({ children }: { children: ReactNode }) {
-    const noAuth = process.env.NEXT_PUBLIC_NO_AUTH === "true";
+    const [isMounting, setIsMounting] = useState(true);
+
     const { isLoaded, getToken, isSignedIn } = useAuth();
 
     const user = useUser((s) => s.user);
@@ -17,14 +19,22 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
     const connectSocket = useSocket((s) => s.connectSocket);
     const disconnectSocket = useSocket((s) => s.disconnectSocket);
 
-    useEffect(() => {
-        if (!noAuth && (!isLoaded || !isSignedIn)) return;
+    const isLoading = isMounting || (isLocal ? loading : !isLoaded || (isSignedIn && loading));
 
-        (async () => {
-            const token = noAuth ? localStorage.getItem("test_user_id") : await getToken();
-            await getUser(token ?? "");
-        })();
-    }, [getToken, getUser, isLoaded, isSignedIn, noAuth]);
+    useEffect(() => {
+        if (isMounting) return;
+        if (!isLocal && (!isLoaded || !isSignedIn)) return;
+
+        const fetchUser = async () => {
+            const token = isLocal ? localStorage.getItem("test_user_id") : await getToken();
+
+            if (token) {
+                await getUser(token);
+            }
+        };
+
+        fetchUser();
+    }, [getToken, getUser, isLoaded, isMounting, isSignedIn]);
 
     useEffect(() => {
         if (loading) return;
@@ -37,28 +47,28 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
     }, [clearUser, disconnectSocket, loading, user]);
 
     useEffect(() => {
-        if (!user || loading) return;
+        if (!user || loading || isMounting) return;
 
         let active = true;
         (async () => {
-            const token = noAuth ? localStorage.getItem("test_user_id") : await getToken();
-            connectSocket(token ?? "");
-            if (active) connectSocket(token ?? "");
+            const token = isLocal ? localStorage.getItem("test_user_id") : await getToken();
+            if (active && token) connectSocket(token);
         })();
 
         return () => {
             active = false;
         };
-    }, [connectSocket, getToken, loading, noAuth, user]);
+    }, [connectSocket, getToken, isMounting, loading, user]);
 
-    if (noAuth ? loading : !isLoaded || (isSignedIn && loading))
-        return (
-            <div className="flex h-screen w-full items-center justify-center">
-                <Loader loading={loading} />
-            </div>
-        );
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setIsMounting(false);
+        }, 1000);
 
-    // if (noAuth ? !user : isSignedIn && !user) return <div className="flex h-screen items-center justify-center">Error loading profile...</div>;
+        return () => clearTimeout(timeout);
+    }, []);
+
+    if (isLoading) return <UltimateLoader />;
 
     return children;
 }

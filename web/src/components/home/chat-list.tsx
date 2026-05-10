@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { usePathname } from "next/navigation";
 import { ImageIcon, MessageSquarePlus, Search } from "lucide-react";
 import useRoom from "@/store/room-store";
-import useUser from "@/store/auth-store";
+import useUser from "@/store/user-store";
 import { useEffect } from "react";
 import Image from "next/image";
 import { formatDate, getInitials } from "@/utils/helper-functions";
@@ -26,7 +26,7 @@ export default function ChatList() {
     const fetchingRooms = useRoom((s) => s.fetchingRooms);
 
     useEffect(() => {
-        getRooms(lastToken ?? "");
+        if (lastToken) getRooms(lastToken);
     }, [getRooms, lastToken]);
 
     if (fetchingRooms) {

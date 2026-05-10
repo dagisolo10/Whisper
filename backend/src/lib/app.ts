@@ -12,7 +12,11 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({ origin: [ENV.CLIENT_URL, "http://localhost:8081"], credentials: true }));
-app.use(clerkMiddleware());
+app.use(
+    clerkMiddleware({
+        clockSkewInMs: 60000,
+    }),
+);
 
 app.use("/uploads", express.static(uploadsDir));
 

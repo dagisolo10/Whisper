@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
-import Loader from "@/components/loader";
+import Loader from "@/components/loaders/loader";
 import useSignInUp from "@/hooks/use-sign-in-up";
 
 export default function SignInForm() {

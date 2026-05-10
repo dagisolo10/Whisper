@@ -21,6 +21,7 @@ export default function OpenChatPanel() {
         message,
         isTyping,
         messages,
+        exitRoom,
         scrollRef,
         isSending,
         activeRoom,
@@ -86,7 +87,17 @@ export default function OpenChatPanel() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="rounded-full" aria-label="Close chat" onClick={() => router.push("/")}>
+                    <Button
+                        size="icon"
+                        type="button"
+                        variant="ghost"
+                        aria-label="Close chat"
+                        className="rounded-full"
+                        onClick={() => {
+                            exitRoom();
+                            router.push("/");
+                        }}
+                    >
                         <X className="size-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="rounded-full" aria-label="Phone call">

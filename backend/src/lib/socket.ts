@@ -27,10 +27,10 @@ export default function initializeSocket(server: HttpServer) {
 
             let userId;
 
-            if (process.env.NODE_ENV === "development") {
+            if (process.env.LOCAL === "true") {
                 userId = token;
             } else {
-                const payload = await verifyToken(token, { secretKey: ENV.CLERK_SECRET_KEY });
+                const payload = await verifyToken(token, { clockSkewInMs: 60000, secretKey: ENV.CLERK_SECRET_KEY });
                 userId = typeof payload?.sub === "string" ? payload.sub : undefined;
             }
 

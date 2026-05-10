@@ -8,7 +8,7 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import FooterRedirect from "@/components/auth/ui/footer-redirect";
-import Loader from "@/components/loader";
+import Loader from "@/components/loaders/loader";
 import useVerification from "@/hooks/use-verification";
 
 export default function Verification() {

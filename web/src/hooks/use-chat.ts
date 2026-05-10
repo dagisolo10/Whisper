@@ -7,7 +7,7 @@ import useSocket from "@/store/socket-store";
 import { MessagePayload } from "@/types/payloads";
 import { useState, useRef, SyntheticEvent, ChangeEvent, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-import useUser from "@/store/auth-store";
+import useUser from "@/store/user-store";
 import { PendingImage } from "@/types/media";
 
 const imageSchema = z
@@ -20,6 +20,7 @@ const imageListSchema = z.array(imageSchema).min(1, "Please select at least one 
 export default function useChat() {
     const user = useUser((s) => s.user);
     const socket = useSocket((s) => s.socket);
+    const exitRoom = useRoom((s) => s.exitRoom);
     const lastToken = useUser((s) => s.lastToken);
     const messages = useMessage((s) => s.messages);
     const activeRoom = useRoom((s) => s.activeRoom);
@@ -72,7 +73,7 @@ export default function useChat() {
 
     async function handleSendMessage(e: SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (!activeRoom || isSending || !user || !socket || (!message.trim() && pendingImages.length === 0)) return;
+        if (!activeRoom || !lastToken || isSending || !user || !socket || (!message.trim() && pendingImages.length === 0)) return;
 
         setIsSending(true);
 
@@ -89,7 +90,7 @@ export default function useChat() {
                 if (trimmedMessage) {
                     formData.append("textContent", trimmedMessage);
                 }
-                await sendMessage(formData, lastToken ?? "");
+                await sendMessage(formData, lastToken);
                 clearPendingImages();
                 sent = true;
             } else {
@@ -98,7 +99,7 @@ export default function useChat() {
                     messageType: "Text",
                     roomId: activeRoom.id,
                 };
-                await sendMessage(payload, lastToken ?? "");
+                await sendMessage(payload, lastToken);
                 sent = true;
             }
         } catch (error) {
@@ -113,13 +114,15 @@ export default function useChat() {
     }
 
     async function sendWave(partnerId: string) {
+        if (!lastToken) return;
+
         try {
             const payload: MessagePayload = {
                 textContent: "Hi 👋",
                 messageType: "Text",
                 partnerId,
             };
-            await sendMessage(payload, lastToken ?? "");
+            await sendMessage(payload, lastToken);
         } catch (err) {
             console.error("Error sending wave", err);
             toast.error("Couldn't send wave", { description: "Please try again." });
@@ -205,6 +208,7 @@ export default function useChat() {
         message,
         isTyping,
         messages,
+        exitRoom,
         sendWave,
         scrollRef,
         isSending,

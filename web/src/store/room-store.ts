@@ -15,20 +15,30 @@ interface RoomStore {
     fetchingRooms: boolean;
     fetchingChat: boolean;
 
+    exitRoom: () => void;
     addRoom: (room: Room) => void;
 
     getRooms: (token: string) => Promise<void>;
     updateRoomPreview: (message: Message) => void;
-    getConversation: (roomId: string, token: string) => Promise<void>;
+    getConversation: (roomId: string, token: string) => Promise<{ success: boolean }>;
     createRoom: (payload: RoomPayload, token: string) => Promise<Room | undefined>;
 }
 
-const useRoom = create<RoomStore>((set) => ({
+const useRoom = create<RoomStore>((set, get) => ({
     rooms: [],
     activeRoom: null,
     activeRoomId: null,
     fetchingChat: false,
     fetchingRooms: false,
+
+    exitRoom: () => {
+        const { activeRoomId } = get();
+        const socket = useSocket.getState().socket;
+        if (activeRoomId && socket) {
+            socket.emit("leaveRoom", activeRoomId);
+        }
+        set({ activeRoom: null, activeRoomId: null });
+    },
 
     addRoom: (room) => {
         set((state) => {
@@ -70,11 +80,7 @@ const useRoom = create<RoomStore>((set) => ({
     },
 
     getConversation: async (roomId, token) => {
-        set({
-            fetchingChat: true,
-            activeRoomId: null,
-            activeRoom: null,
-        });
+        set({ fetchingChat: true, activeRoomId: null, activeRoom: null });
 
         await new Promise((resolve) => setTimeout(resolve, 300));
 
@@ -104,9 +110,12 @@ const useRoom = create<RoomStore>((set) => ({
             }));
 
             useMessage.getState().setMessages(data.data.messages || []);
+
+            return { success: true };
         } catch (err) {
             console.error("Error fetching conversation", err);
             set({ activeRoom: null, activeRoomId: null });
+            return { success: false };
         } finally {
             set({ fetchingChat: false });
         }

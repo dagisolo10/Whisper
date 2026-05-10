@@ -3,9 +3,16 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import useUtil from "@/store/util-store";
-import useUser from "@/store/auth-store";
+import useUser from "@/store/user-store";
 import Image from "next/image";
 import { getInitials } from "@/utils/helper-functions";
+import { isLocal } from "@/constants/env";
+import { UserButton } from "@clerk/nextjs";
+
+const chatFilters = [
+    { label: "All chats", count: 68, active: true },
+    { label: "Unread", count: 9 },
+];
 
 export default function Filters() {
     const setSidebar = useUtil((s) => s.setSidebar);
@@ -13,16 +20,7 @@ export default function Filters() {
 
     return (
         <div className="flex h-screen flex-col items-center gap-2 border-r px-2">
-            <div className="flex flex-col items-center gap-4 py-4">
-                <p>{getInitials(user?.name ?? "User")}</p>
-                <div className="bg-primary/10 size-12 rounded-full border p-2">
-                    <div className="relative size-full overflow-hidden rounded-full">
-                        {user?.mainAvatarUrl && <Image src={user.mainAvatarUrl} fill alt={user.name} unoptimized />}
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex items-center justify-center">
+            <div className="my-6 flex items-center justify-center">
                 <Button onClick={() => setSidebar(true)} variant={"ghost"} size={"icon"}>
                     <Menu className="size-5" />
                 </Button>
@@ -42,14 +40,21 @@ export default function Filters() {
                     <div className="mt-1 text-xs leading-tight font-medium">{filter.label}</div>
                 </button>
             ))}
+
+            <div className="mt-auto flex flex-col items-center gap-2 py-4">
+                {isLocal ? (
+                    <>
+                        <p className="font-semibold">{getInitials(user?.name ?? "- -")}</p>
+                        <div className="size-8 rounded-full">
+                            <div className="relative size-full overflow-hidden rounded-full">
+                                {user?.mainAvatarUrl && <Image src={user.mainAvatarUrl} fill alt={user.name} unoptimized />}
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <UserButton />
+                )}
+            </div>
         </div>
     );
 }
-
-const chatFilters = [
-    { label: "All chats", count: 68, active: true },
-    { label: "Unread", count: 9 },
-    // { label: "Personal", count: 65 },
-    // { label: "Groups", count: 2 },
-    // { label: "Channels", count: 1 },
-];
