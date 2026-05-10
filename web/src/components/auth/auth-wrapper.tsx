@@ -22,7 +22,8 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
     const isLoading = isMounting || (isLocal ? loading : !isLoaded || (isSignedIn && loading));
 
     useEffect(() => {
-        if (isMounting || !isLoaded || !isSignedIn) return;
+        if (isMounting) return;
+        if (!isLocal && (!isLoaded || !isSignedIn)) return;
 
         const fetchUser = async () => {
             const token = isLocal ? localStorage.getItem("test_user_id") : await getToken();
