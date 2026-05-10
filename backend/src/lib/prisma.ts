@@ -8,7 +8,11 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-const pool = new pg.Pool({ connectionString });
+const pool = new pg.Pool({
+    connectionString,
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10000,
+});
 const adapter = new PrismaPg(pool);
 
 const prisma = globalForPrisma.prisma || new PrismaClient({ adapter, log: isProduction ? [] : ["query"] });
