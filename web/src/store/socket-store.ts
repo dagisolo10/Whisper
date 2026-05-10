@@ -2,8 +2,8 @@ import useRoom from "./room-store";
 import useMessage from "./message-store";
 
 import { create } from "zustand";
+import useUser from "@/store/user-store";
 import { io, Socket } from "socket.io-client";
-import useAuthStore from "@/store/user-store";
 import showNotification from "@/lib/notification";
 import { ClientToServerEvents, ServerToClientEvents } from "@/types/socket-events";
 
@@ -69,7 +69,7 @@ const useSocket = create<SocketStore>((set, get) => ({
 
         socket.off("newMessage");
         socket.on("newMessage", async (message, roomId) => {
-            const user = useAuthStore.getState().user;
+            const user = useUser.getState().user;
             const currentActiveRoomId = useRoom.getState().activeRoomId;
             const currentMessages = useMessage.getState().messages;
 
@@ -95,7 +95,7 @@ const useSocket = create<SocketStore>((set, get) => ({
 
         socket.off("messageRead");
         socket.on("messageRead", (roomId) => {
-            const user = useAuthStore.getState().user;
+            const user = useUser.getState().user;
             const readMessages = useMessage
                 .getState()
                 .messages.map((msg) => (msg.roomId === roomId && msg.senderId === user?.id ? { ...msg, read: true } : msg));

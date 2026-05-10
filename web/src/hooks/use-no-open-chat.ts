@@ -32,7 +32,10 @@ export default function useNoOpenChat() {
             const currentRequestId = ++requestIdRef.current;
 
             timeoutRef.current = setTimeout(async () => {
-                if (!lastToken) return;
+                if (!lastToken) {
+                    setResult([]);
+                    return;
+                }
 
                 const result = await searchUser(value, lastToken);
                 if (currentRequestId === requestIdRef.current) {

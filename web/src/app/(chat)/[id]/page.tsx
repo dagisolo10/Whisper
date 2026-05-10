@@ -23,15 +23,21 @@ export default function ChatPage() {
     const isLoading = fetchingChat || (activeRoomId !== roomId && !hasError);
 
     useEffect(() => {
+        let cancelled = false;
+
         (async () => {
             if (roomId && lastToken) {
                 const result = await getConversation(roomId, lastToken);
-                if (!result.success) {
+                if (!cancelled && !result.success) {
                     toast.error("Chat not found");
                     router.replace("/");
                 }
             }
         })();
+
+        return () => {
+            cancelled = true;
+        };
     }, [roomId, getConversation, lastToken, router]);
 
     return (

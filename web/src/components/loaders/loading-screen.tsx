@@ -5,7 +5,7 @@ import GlitchText from "../ui/glitch-text";
 
 export default function UltimateLoader() {
     return (
-        <div className="fixed inset-0 z-9999 flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-black font-sans text-white selection:bg-none">
+        <div className="fixed inset-0 z-9999 flex h-screen w-full flex-col items-center justify-center overflow-hidden font-sans text-white select-none">
             <div className="absolute inset-0 z-0">
                 <Orb hoverIntensity={2} rotateOnHover hue={0} forceHoverState={false} backgroundColor="#000000" />
             </div>
@@ -29,27 +29,27 @@ export default function UltimateLoader() {
                     <p className="text-xs font-light tracking-[0.5em] text-white/50 uppercase">Loading System</p>
                     <span className="h-px w-8 bg-white/20" />
                 </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                    className="absolute -bottom-16 z-20 flex flex-col items-center gap-4"
+                >
+                    <div className="h-px w-32 overflow-hidden bg-white/5">
+                        <motion.div
+                            animate={{ x: ["-100%", "100%"] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            className="h-full w-full bg-linear-to-r from-transparent via-blue-500 to-transparent"
+                        />
+                    </div>
+
+                    <div className="flex flex-col items-center gap-1 font-semibold">
+                        <p className="text-[10px] tracking-[0.3em] text-gray-500 uppercase">End-to-End Encrypted</p>
+                        <p className="text-[8px] tracking-widest text-gray-700 uppercase">v{process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0"} Secure Node</p>
+                    </div>
+                </motion.div>
             </div>
-
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="absolute bottom-12 z-20 flex flex-col items-center gap-4"
-            >
-                <div className="h-px w-32 overflow-hidden bg-white/5">
-                    <motion.div
-                        animate={{ x: ["-100%", "100%"] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="h-full w-full bg-linear-to-r from-transparent via-blue-500 to-transparent"
-                    />
-                </div>
-
-                <div className="flex flex-col items-center gap-1">
-                    <p className="text-[10px] tracking-[0.3em] text-gray-500 uppercase">End-to-End Encrypted</p>
-                    <p className="text-[8px] tracking-widest text-gray-700 uppercase">v1.0.8 Secure Node</p>
-                </div>
-            </motion.div>
 
             <div className="pointer-events-none absolute inset-0 z-50 opacity-[0.02] mix-blend-overlay">
                 <div

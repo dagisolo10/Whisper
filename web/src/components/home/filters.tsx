@@ -42,13 +42,15 @@ export default function Filters() {
             ))}
 
             <div className="mt-auto flex flex-col items-center gap-2 py-4">
-                <p className="font-semibold">{getInitials(user?.name ?? "- -")}</p>
                 {isLocal ? (
-                    <div className="bg-primary/10 size-12 rounded-full border p-2">
-                        <div className="relative size-full overflow-hidden rounded-full">
-                            {user?.mainAvatarUrl && <Image src={user.mainAvatarUrl} fill alt={user.name} unoptimized />}
+                    <>
+                        <p className="font-semibold">{getInitials(user?.name ?? "- -")}</p>
+                        <div className="size-8 rounded-full">
+                            <div className="relative size-full overflow-hidden rounded-full">
+                                {user?.mainAvatarUrl && <Image src={user.mainAvatarUrl} fill alt={user.name} unoptimized />}
+                            </div>
                         </div>
-                    </div>
+                    </>
                 ) : (
                     <UserButton />
                 )}

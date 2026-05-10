@@ -19,7 +19,7 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
     const connectSocket = useSocket((s) => s.connectSocket);
     const disconnectSocket = useSocket((s) => s.disconnectSocket);
 
-    const isLoading = isMounting || !isLoaded || (isSignedIn && loading);
+    const isLoading = isMounting || (isLocal ? loading : !isLoaded || (isSignedIn && loading));
 
     useEffect(() => {
         if (isMounting || !isLoaded || !isSignedIn) return;
