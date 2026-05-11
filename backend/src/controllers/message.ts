@@ -106,6 +106,16 @@ export async function sendMessage(req: Request, res: Response) {
             if (!existingRoom) throw new HttpError(404, "Room not found");
             const room = existingRoom;
 
+            if (clientId) {
+                const existingByClientId = await tx.message.findFirst({
+                    where: { roomId: room.id, senderId, clientId },
+                    include: { user: true },
+                });
+                if (existingByClientId) {
+                    return { roomId: room.id, message: existingByClientId };
+                }
+            }
+
             const newMessage = await tx.message.create({
                 data: {
                     senderId,

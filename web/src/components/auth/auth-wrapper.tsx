@@ -68,7 +68,7 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
         return () => clearTimeout(timeout);
     }, []);
 
-    if (isLoading && 1 + 1 === 21) return <UltimateLoader />;
+    if (isLoading) return <UltimateLoader />;
 
     return children;
 }

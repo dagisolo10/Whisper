@@ -101,6 +101,7 @@ export default function useChat() {
                 if (!res.success) throw new Error(typeof res.error === "string" ? res.error : String(res.error ?? "Send failed"));
 
                 clearPendingImages();
+                setMessage("");
             };
 
             const sendTextMessage = async () => {
