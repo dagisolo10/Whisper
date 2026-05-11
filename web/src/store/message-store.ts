@@ -133,8 +133,9 @@ const useMessage = create<MessageStore>()(
 
             sendMessage: async (payload, token, clientId) => {
                 try {
+                    const shouldDelay = false ? 1500 : 0;
                     const shouldSucceed = typeof window !== "undefined" ? !window.FORCE_FAIL : true && process.env.NODE_ENV !== "production";
-                    await simulateDelay(1500, { success: shouldSucceed });
+                    await simulateDelay(shouldDelay, { success: shouldSucceed });
 
                     const payloadWithClientId =
                         payload instanceof FormData
