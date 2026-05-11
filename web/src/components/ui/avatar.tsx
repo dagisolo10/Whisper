@@ -33,10 +33,7 @@ function AvatarFallback({ className, ...props }: React.ComponentProps<typeof Ava
     return (
         <AvatarPrimitive.Fallback
             data-slot="avatar-fallback"
-            className={cn(
-                "bg-muted text-muted-foreground flex size-full items-center justify-center rounded-full text-sm group-data-[size=sm]/avatar:text-xs",
-                className,
-            )}
+            className={cn("bg-muted text-muted-foreground flex size-full items-center justify-center rounded-full text-sm group-data-[size=sm]/avatar:text-xs", className)}
             {...props}
         />
     );
@@ -47,10 +44,7 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
         <span
             data-slot="avatar-badge"
             className={cn(
-                "bg-primary text-primary-foreground ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-blend-color ring-2 select-none",
-                "group-data-[size=sm]/avatar:size-2 group-data-[size=sm]/avatar:[&>svg]:hidden",
-                "group-data-[size=default]/avatar:size-2.5 group-data-[size=default]/avatar:[&>svg]:size-2",
-                "group-data-[size=lg]/avatar:size-3 group-data-[size=lg]/avatar:[&>svg]:size-2",
+                "bg-primary text-primary-foreground ring-background absolute right-0 bottom-0 z-10 inline-flex size-2 items-center justify-center rounded-full bg-blend-color ring-1 select-none",
                 className,
             )}
             {...props}
@@ -59,13 +53,7 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
 }
 
 function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
-    return (
-        <div
-            data-slot="avatar-group"
-            className={cn("group/avatar-group *:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2", className)}
-            {...props}
-        />
-    );
+    return <div data-slot="avatar-group" className={cn("group/avatar-group *:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2", className)} {...props} />;
 }
 
 function AvatarGroupCount({ className, ...props }: React.ComponentProps<"div">) {

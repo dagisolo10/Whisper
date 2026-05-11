@@ -25,10 +25,7 @@ export default function Sidebar() {
             onClick={toggleSidebar}
             onKeyDown={(e) => e.key === "Escape" && setSidebar(false)}
             role="presentation"
-            className={cn(
-                "fixed inset-0 z-50 hidden transition-colors duration-300 lg:block",
-                sidebar ? "pointer-events-auto bg-black/50" : "pointer-events-none bg-transparent",
-            )}
+            className={cn("fixed inset-0 z-50 hidden transition-colors duration-300 lg:block", sidebar ? "pointer-events-auto bg-black/50" : "pointer-events-none bg-transparent")}
         >
             <aside
                 role="dialog"

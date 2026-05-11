@@ -41,6 +41,7 @@ export interface Message {
     senderId: string;
     createdAt: string;
     messageType: MessageType;
+    clientId?: string | null;
 
     lastInRoom?: PureRoom;
     user: User;

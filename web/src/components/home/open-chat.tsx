@@ -4,16 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ChatCard from "@/components/home/chat-card";
 import { Info, Paperclip, Phone, SendHorizontal, Smile, Video, Loader2, Images, X } from "lucide-react";
-import Image from "next/image";
 import { formatDate, getInitials } from "@/utils/helper-functions";
 import { resolveMediaUrl } from "@/lib/media";
 import { ImageCarousel } from "../image-carousel";
-import OnlineIndicator from "./indicators/online-indicator";
+
 import TypingIndicator from "./indicators/typing-indicator";
 import useChat from "@/hooks/use-chat";
 import ImageOptions from "./image-options";
 import NoMessages from "./empty states/no-message";
 import { useRouter } from "next/navigation";
+import { Avatar, AvatarBadge, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export default function OpenChatPanel() {
     const {
@@ -26,6 +26,7 @@ export default function OpenChatPanel() {
         isSending,
         activeRoom,
         onlineUsers,
+        retryMessage,
         handleTyping,
         imageInputRef,
         pendingImages,
@@ -43,8 +44,6 @@ export default function OpenChatPanel() {
 
     if (!partner) return null;
 
-    const avatar = getInitials(partner.name);
-
     const isOnline = onlineUsers.includes(partner.id);
     const canSend = (!isSending && message.trim().length > 0) || (!isSending && pendingImages.length > 0);
 
@@ -52,27 +51,11 @@ export default function OpenChatPanel() {
         <section className="flex h-screen flex-col">
             <header className="border-border bg-background/95 flex items-center justify-between border-b px-6 py-4 backdrop-blur">
                 <div className="flex items-center gap-4">
-                    <div className="relative">
-                        {partner.mainAvatarUrl ? (
-                            <Image
-                                className="size-8 rounded-full object-cover"
-                                width={32}
-                                height={32}
-                                src={resolveMediaUrl(partner.mainAvatarUrl) ?? partner.mainAvatarUrl}
-                                alt={partner.name}
-                                unoptimized
-                            />
-                        ) : (
-                            <div
-                                className={cn(
-                                    "border-primary flex size-8 shrink-0 items-center justify-center rounded-full border bg-linear-to-br text-xs font-semibold text-white shadow-sm",
-                                )}
-                            >
-                                {avatar}
-                            </div>
-                        )}
-                        <OnlineIndicator isOnline={isOnline} />
-                    </div>
+                    <Avatar>
+                        <AvatarImage src={resolveMediaUrl(partner.mainAvatarUrl) ?? undefined} alt={partner.name} />
+                        <AvatarFallback>{getInitials(partner.name)}</AvatarFallback>
+                        <AvatarBadge className={cn(isOnline ? "bg-green-500" : "bg-zinc-600")} />
+                    </Avatar>
 
                     <div>
                         <h2 className="font-jakarta text-sm font-semibold">{partner.name}</h2>
@@ -95,7 +78,7 @@ export default function OpenChatPanel() {
                         className="rounded-full"
                         onClick={() => {
                             exitRoom();
-                            router.push("/");
+                            router.push("/chats");
                         }}
                     >
                         <X className="size-4" />
@@ -117,17 +100,11 @@ export default function OpenChatPanel() {
                     <div className="mx-auto flex w-full max-w-4xl flex-col-reverse gap-4 p-6">
                         <div ref={scrollRef} />
                         {messages.map((message, index) => {
-                            const isNewDay =
-                                index === messages.length - 1 ||
-                                new Date(message.createdAt).toDateString() !== new Date(messages[index + 1].createdAt).toDateString();
+                            const isNewDay = index === messages.length - 1 || new Date(message.createdAt).toDateString() !== new Date(messages[index + 1].createdAt).toDateString();
                             return (
-                                <div key={message.id}>
-                                    {isNewDay && (
-                                        <p className="m-auto mb-4 w-fit rounded-full bg-white/10 px-4 py-1 text-xs">
-                                            {formatDate(message.createdAt, "daySeparator")}
-                                        </p>
-                                    )}
-                                    <ChatCard message={message} />
+                                <div key={message.id} className="contain-[layout]">
+                                    {isNewDay && <p className="m-auto mb-4 w-fit rounded-full bg-white/10 px-4 py-1 text-xs">{formatDate(message.createdAt, "daySeparator")}</p>}
+                                    <ChatCard message={message} onRetry={retryMessage} />
                                 </div>
                             );
                         })}
@@ -146,13 +123,7 @@ export default function OpenChatPanel() {
                             alt: image.file.name || `Selected image ${index + 1}`,
                         }))}
                         renderActions={({ activeIndex, closePreview }) => (
-                            <ImageOptions
-                                imageInputRef={imageInputRef}
-                                pendingImages={pendingImages}
-                                activeIndex={activeIndex}
-                                removePendingImage={removePendingImage}
-                                closePreview={closePreview}
-                            />
+                            <ImageOptions imageInputRef={imageInputRef} pendingImages={pendingImages} activeIndex={activeIndex} removePendingImage={removePendingImage} closePreview={closePreview} />
                         )}
                     >
                         {({ openPreview }) => (
@@ -181,7 +152,7 @@ export default function OpenChatPanel() {
             )}
 
             <form className="border-border bg-background flex items-center gap-3 border border-t px-4 py-5 shadow-sm" onSubmit={handleSendMessage}>
-                <input ref={imageInputRef} id="image" name="image" type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
+                <input ref={imageInputRef} title="Upload image" id="image" name="image" type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
 
                 <Button type="button" variant="outline" size="icon" disabled={isSending} onClick={() => imageInputRef.current?.click()}>
                     <span className="sr-only">Upload image</span>

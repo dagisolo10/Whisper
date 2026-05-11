@@ -23,6 +23,7 @@ export async function sendMessage(req: Request, res: Response) {
 
         const textContent = typeof req.body.textContent === "string" ? req.body.textContent.trim() : "";
         const imageUrls = messageType === "Image" ? files.map((file) => `/uploads/${file.filename}`) : [];
+        const clientId = typeof req.body.clientId === "string" ? req.body.clientId.trim() || null : null;
 
         const senderId = req.userId;
         const roomId = req.body.roomId as string | undefined;
@@ -103,14 +104,26 @@ export async function sendMessage(req: Request, res: Response) {
             }
 
             if (!existingRoom) throw new HttpError(404, "Room not found");
+            const room = existingRoom;
+
+            if (clientId) {
+                const existingByClientId = await tx.message.findFirst({
+                    where: { roomId: room.id, senderId, clientId },
+                    include: { user: true },
+                });
+                if (existingByClientId) {
+                    return { roomId: room.id, message: existingByClientId };
+                }
+            }
 
             const newMessage = await tx.message.create({
                 data: {
                     senderId,
+                    clientId,
+                    imageUrls,
                     messageType,
                     textContent: textContent || null,
-                    imageUrls,
-                    roomId: existingRoom.id,
+                    roomId: room.id,
                 },
                 include: {
                     user: true,
@@ -119,7 +132,7 @@ export async function sendMessage(req: Request, res: Response) {
 
             await tx.room.update({
                 where: {
-                    id: existingRoom.id,
+                    id: room.id,
                 },
                 data: {
                     lastMessageId: newMessage.id,
@@ -130,13 +143,13 @@ export async function sendMessage(req: Request, res: Response) {
             const io: SocketServer<ClientToServerEvents, ServerToClientEvents> = req.app.get("io");
 
             if (io) {
-                io.to(existingRoom.id).emit("newMessage", newMessage, existingRoom.id);
-                existingRoom.members.forEach((member) => {
-                    io.to(`user_${member.userId}`).emit("newMessage", newMessage, existingRoom.id);
+                io.to(room.id).emit("newMessage", newMessage, room.id);
+                room.members.forEach((member) => {
+                    io.to(`user_${member.userId}`).emit("newMessage", newMessage, room.id);
                 });
             }
 
-            return { roomId: existingRoom.id, message: newMessage };
+            return { roomId: room.id, message: newMessage };
         });
 
         return result;

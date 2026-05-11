@@ -3,9 +3,9 @@
 import useUser from "@/store/user-store";
 import { ReactNode, useEffect, useState } from "react";
 import useSocket from "@/store/socket-store";
-import { useAuth } from "@clerk/nextjs";
 import { isLocal } from "@/constants/env";
 import UltimateLoader from "@/components/loaders/loading-screen";
+import { useAuth } from "@clerk/nextjs";
 
 export default function AuthWrapper({ children }: { children: ReactNode }) {
     const [isMounting, setIsMounting] = useState(true);
@@ -19,7 +19,7 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
     const connectSocket = useSocket((s) => s.connectSocket);
     const disconnectSocket = useSocket((s) => s.disconnectSocket);
 
-    const isLoading = isMounting || (isLocal ? loading : !isLoaded || (isSignedIn && loading));
+    const isLoading = isMounting || loading || (isLocal ? loading : !isLoaded || (isSignedIn && loading));
 
     useEffect(() => {
         if (isMounting) return;
@@ -34,7 +34,7 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
         };
 
         fetchUser();
-    }, [getToken, getUser, isLoaded, isMounting, isSignedIn]);
+    }, [getUser, isMounting, isLoaded, isSignedIn, getToken]);
 
     useEffect(() => {
         if (loading) return;

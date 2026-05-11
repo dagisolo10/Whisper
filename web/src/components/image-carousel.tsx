@@ -102,7 +102,7 @@ export function ImageCarousel({ galleryImages, initialIndex = 0, children, rende
                                 <CarouselContent className={carouselHeight}>
                                     {galleryImages.map((image, index) => (
                                         <CarouselItem key={image.id} className="flex items-center justify-center">
-                                            <button onClick={() => setFullscreen((curr) => !curr)} className="relative aspect-square h-full w-full max-w-4xl">
+                                            <button title="Image Preview" onClick={() => setFullscreen((curr) => !curr)} className="relative aspect-square h-full w-full max-w-4xl">
                                                 <Image src={image.src} alt="Preview" fill className="object-contain" unoptimized priority={index === activeIndex} />
                                             </button>
                                         </CarouselItem>
@@ -131,6 +131,7 @@ function Thumbnails({ activeIndex, galleryImages, onThumbClick, fullscreen }: { 
             <div className="scrollbar-none mx-auto flex max-w-4xl justify-start gap-3 overflow-x-auto rounded-3xl p-3 sm:justify-center">
                 {galleryImages.map((image, index) => (
                     <button
+                    title="Thumbnail"
                         type="button"
                         key={`${image.id}-thumb`}
                         onClick={() => onThumbClick(index)}

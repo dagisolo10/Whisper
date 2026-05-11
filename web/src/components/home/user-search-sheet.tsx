@@ -1,5 +1,5 @@
 "use client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarBadge, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,13 @@ import { MessageSquarePlus, Search, Loader2, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User } from "@/types/model";
 import useNoOpenChat from "@/hooks/use-no-open-chat";
+import useSocket from "@/store/socket-store";
+import { cn } from "@/lib/utils";
+import { resolveMediaUrl } from "@/lib/media";
+import { getInitials } from "@/utils/helper-functions";
 
 export default function SearchSheet() {
+    const onlineUsers = useSocket((s) => s.onlineUsers);
     const { query, result, searching, showEmpty, showResults, handleUserClick, handleQueryChange } = useNoOpenChat();
 
     return (
@@ -28,10 +33,7 @@ export default function SearchSheet() {
                 </Button>
             </SheetTrigger>
 
-            <SheetContent
-                side="bottom"
-                className="bg-background/40 mx-auto w-full max-w-xl items-center rounded-t-[2rem] border-t border-white/10 pb-4 backdrop-blur-3xl data-[side=bottom]:h-[95vh]"
-            >
+            <SheetContent side="bottom" className="bg-background/40 mx-auto w-full max-w-xl items-center rounded-t-[2rem] border-t border-white/10 pb-4 backdrop-blur-3xl data-[side=bottom]:h-[95vh]">
                 <div className="bg-muted-foreground/20 mx-auto mt-2 h-1.5 w-12 rounded-full" />
 
                 <SheetHeader className="flex flex-col items-center gap-2">
@@ -48,7 +50,7 @@ export default function SearchSheet() {
 
                         {showEmpty && <EmptyResult />}
 
-                        {showResults && <SearchResults result={result} onClick={(userId) => handleUserClick(userId)} />}
+                        {showResults && <SearchResults result={result} onClick={(userId) => handleUserClick(userId)} onlineUsers={onlineUsers} />}
                     </AnimatePresence>
                 </div>
             </SheetContent>
@@ -56,47 +58,46 @@ export default function SearchSheet() {
     );
 }
 
-function SearchResults({ result, onClick }: { result: User[]; onClick: (userId: string) => void }) {
+function SearchResults({ result, onClick, onlineUsers }: { result: User[]; onClick: (userId: string) => void; onlineUsers: string[] }) {
     return (
         <motion.div key="results-state" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-2">
-            {result.map((user, index) => (
-                <motion.button
-                    key={user.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.7, ease: "easeIn", delay: index * 0.05 }}
-                    onClick={() => onClick(user.id)}
-                    className="group hover:bg-primary/10 flex cursor-pointer items-center justify-between rounded-2xl px-4 py-2 transition-all"
-                >
-                    <div className="flex items-center gap-4">
-                        <Avatar className="border-primary/20 size-8 border-2">
-                            <AvatarImage src={user.mainAvatarUrl ?? undefined} />
-                            <AvatarFallback className="bg-primary/20 text-primary font-bold">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
+            {result.map((user, index) => {
+                const isOnline = onlineUsers.includes(user.id);
 
-                        <div className="text-left">
-                            <p className="text-foreground font-semibold">{user.name}</p>
-                            <p className="text-muted-foreground text-xs font-semibold">@{user.username}</p>
+                return (
+                    <motion.button
+                        key={user.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.7, ease: "easeIn", delay: index * 0.05 }}
+                        onClick={() => onClick(user.id)}
+                        className="group hover:bg-primary/10 flex cursor-pointer items-center justify-between rounded-2xl px-4 py-2 transition-all"
+                    >
+                        <div className="flex items-center gap-3">
+                            <Avatar>
+                                <AvatarImage src={resolveMediaUrl(user.mainAvatarUrl) ?? undefined} alt={user.name} />
+                                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                <AvatarBadge className={cn(isOnline ? "bg-green-500" : "bg-zinc-600")} />
+                            </Avatar>
+
+                            <div className="text-left">
+                                <p className="text-foreground font-semibold">{user.name}</p>
+                                <p className="text-muted-foreground text-xs font-semibold">@{user.username}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-full opacity-0 transition-all group-hover:opacity-100">
-                        <ArrowRight className="size-5" />
-                    </div>
-                </motion.button>
-            ))}
+                        <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-full opacity-0 transition-all group-hover:opacity-100">
+                            <ArrowRight className="size-5" />
+                        </div>
+                    </motion.button>
+                );
+            })}
         </motion.div>
     );
 }
 
 function Searching() {
     return (
-        <motion.div
-            className="text-muted-foreground flex flex-col items-center py-20"
-            key="searching-state"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-        >
+        <motion.div className="text-muted-foreground flex flex-col items-center py-20" key="searching-state" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <Loader2 className="text-primary size-8 animate-spin" />
             <p className="mt-4 text-sm">Searching the network...</p>
         </motion.div>
@@ -105,13 +106,7 @@ function Searching() {
 
 function EmptyResult() {
     return (
-        <motion.div
-            className="flex flex-col items-center py-20 text-center"
-            key="empty-state"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-        >
+        <motion.div className="flex flex-col items-center py-20 text-center" key="empty-state" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="bg-muted flex size-16 items-center justify-center rounded-full">
                 <Search className="text-muted-foreground size-8" />
             </div>
