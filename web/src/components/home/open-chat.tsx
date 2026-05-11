@@ -4,16 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ChatCard from "@/components/home/chat-card";
 import { Info, Paperclip, Phone, SendHorizontal, Smile, Video, Loader2, Images, X } from "lucide-react";
-import Image from "next/image";
 import { formatDate, getInitials } from "@/utils/helper-functions";
 import { resolveMediaUrl } from "@/lib/media";
 import { ImageCarousel } from "../image-carousel";
-import OnlineIndicator from "./indicators/online-indicator";
+
 import TypingIndicator from "./indicators/typing-indicator";
 import useChat from "@/hooks/use-chat";
 import ImageOptions from "./image-options";
 import NoMessages from "./empty states/no-message";
 import { useRouter } from "next/navigation";
+import { Avatar, AvatarBadge, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export default function OpenChatPanel() {
     const {
@@ -44,8 +44,6 @@ export default function OpenChatPanel() {
 
     if (!partner) return null;
 
-    const avatar = getInitials(partner.name);
-
     const isOnline = onlineUsers.includes(partner.id);
     const canSend = (!isSending && message.trim().length > 0) || (!isSending && pendingImages.length > 0);
 
@@ -53,23 +51,11 @@ export default function OpenChatPanel() {
         <section className="flex h-screen flex-col">
             <header className="border-border bg-background/95 flex items-center justify-between border-b px-6 py-4 backdrop-blur">
                 <div className="flex items-center gap-4">
-                    <div className="relative">
-                        {partner.mainAvatarUrl ? (
-                            <Image
-                                className="size-8 rounded-full object-cover"
-                                width={32}
-                                height={32}
-                                src={resolveMediaUrl(partner.mainAvatarUrl) ?? partner.mainAvatarUrl}
-                                alt={partner.name}
-                                unoptimized
-                            />
-                        ) : (
-                            <div className="border-primary flex size-8 shrink-0 items-center justify-center rounded-full border bg-linear-to-br text-xs font-semibold text-white shadow-sm">
-                                {avatar}
-                            </div>
-                        )}
-                        <OnlineIndicator isOnline={isOnline} />
-                    </div>
+                    <Avatar>
+                        <AvatarImage src={resolveMediaUrl(partner.mainAvatarUrl) ?? undefined} alt={partner.name} />
+                        <AvatarFallback>{getInitials(partner.name)}</AvatarFallback>
+                        <AvatarBadge className={cn(isOnline ? "bg-green-500" : "bg-zinc-600")} />
+                    </Avatar>
 
                     <div>
                         <h2 className="font-jakarta text-sm font-semibold">{partner.name}</h2>

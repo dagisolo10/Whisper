@@ -95,7 +95,7 @@ const useSocket = create<SocketStore>((set, get) => ({
                 useMessage.getState().addMessage(message);
                 if (message.senderId !== user?.id) {
                     socket.emit("markAsRead", roomId);
-
+                    
                     const popSound = new Audio("/sounds/message pop.mp3");
                     popSound.currentTime = 0;
                     popSound.play();

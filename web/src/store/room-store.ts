@@ -38,6 +38,7 @@ const useRoom = create<RoomStore>((set, get) => ({
             socket.emit("leaveRoom", activeRoomId);
         }
         set({ activeRoom: null, activeRoomId: null });
+        useMessage.getState().clearMessages()
     },
 
     addRoom: (room) => {

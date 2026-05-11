@@ -25,6 +25,10 @@ function isOptimisticTwin(existing: StoreMessage, incoming: StoreMessage): boole
         return existing.clientId === incoming.clientId;
     }
 
+    if (existing.clientId || incoming.clientId) {
+        return false;
+    }
+
     if (incoming.messageType === "Text") {
         return normalizeTextContent(existing.textContent) === normalizeTextContent(incoming.textContent);
     }

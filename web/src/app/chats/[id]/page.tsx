@@ -23,9 +23,11 @@ export default function ChatPage() {
     const isLoading = fetchingChat || (activeRoomId !== roomId && !hasError);
 
     useEffect(() => {
+        if (roomId === activeRoomId) return;
+
         let cancelled = false;
 
-        (async () => {
+        const fetchConversation = async () => {
             if (roomId && lastToken) {
                 const result = await getConversation(roomId, lastToken);
                 if (!cancelled && !result.success) {
@@ -33,46 +35,28 @@ export default function ChatPage() {
                     router.replace("/");
                 }
             }
-        })();
+        };
+
+        fetchConversation();
 
         return () => {
             cancelled = true;
         };
-    }, [roomId, getConversation, lastToken, router]);
+    }, [activeRoomId, getConversation, lastToken, roomId, router]);
 
     return (
         <div className="relative h-screen w-full overflow-hidden">
             <AnimatePresence mode="popLayout">
                 {hasError ? (
-                    <motion.div
-                        key="error-view"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="h-full w-full"
-                    >
+                    <motion.div key="error-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="h-full w-full">
                         <NoChatSelected />
                     </motion.div>
                 ) : isLoading ? (
-                    <motion.div
-                        key="skeleton-view"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute inset-0 z-10"
-                    >
+                    <motion.div key="skeleton-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="absolute inset-0 z-10">
                         <Skeleton tag="chat" />
                     </motion.div>
                 ) : (
-                    <motion.div
-                        key="chat-view"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3, delay: 0.1 }}
-                        className="h-full w-full"
-                    >
+                    <motion.div key="chat-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.1 }} className="h-full w-full">
                         <OpenChatPanel />
                     </motion.div>
                 )}

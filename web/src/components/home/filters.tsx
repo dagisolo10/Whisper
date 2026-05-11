@@ -7,7 +7,7 @@ import useUser from "@/store/user-store";
 import Image from "next/image";
 import { getInitials } from "@/utils/helper-functions";
 import { isLocal } from "@/constants/env";
-// import { UserButton } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 
 const chatFilters = [
     { label: "All chats", count: 68, active: true },
@@ -31,9 +31,7 @@ export default function Filters() {
                     key={filter.label}
                     className={cn(
                         "rounded-2xl px-2 py-3 text-center transition",
-                        filter.active
-                            ? "bg-card text-foreground border-border ring-border shadow-sm ring-1"
-                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                        filter.active ? "bg-card text-foreground border-border ring-border shadow-sm ring-1" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                     )}
                 >
                     <div className={cn("text-xs font-semibold", filter.active ? "text-foreground" : "text-muted-foreground")}>{filter.count}</div>
@@ -46,14 +44,11 @@ export default function Filters() {
                     <>
                         <p className="font-semibold">{getInitials(user?.name ?? "- -")}</p>
                         <div className="size-8 rounded-full">
-                            <div className="relative size-full overflow-hidden rounded-full">
-                                {user?.mainAvatarUrl && <Image src={user.mainAvatarUrl} fill alt={user.name} unoptimized />}
-                            </div>
+                            <div className="relative size-full overflow-hidden rounded-full">{user?.mainAvatarUrl && <Image src={user.mainAvatarUrl} fill alt={user.name} unoptimized />}</div>
                         </div>
                     </>
                 ) : (
-                    // <UserButton />
-                    <p>Clerk User</p>
+                    <UserButton />
                 )}
             </div>
         </div>

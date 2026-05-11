@@ -104,6 +104,7 @@ export async function sendMessage(req: Request, res: Response) {
             }
 
             if (!existingRoom) throw new HttpError(404, "Room not found");
+            const room = existingRoom;
 
             const newMessage = await tx.message.create({
                 data: {
@@ -112,7 +113,7 @@ export async function sendMessage(req: Request, res: Response) {
                     imageUrls,
                     messageType,
                     textContent: textContent || null,
-                    roomId: existingRoom.id,
+                    roomId: room.id,
                 },
                 include: {
                     user: true,
@@ -121,7 +122,7 @@ export async function sendMessage(req: Request, res: Response) {
 
             await tx.room.update({
                 where: {
-                    id: existingRoom.id,
+                    id: room.id,
                 },
                 data: {
                     lastMessageId: newMessage.id,
@@ -132,13 +133,13 @@ export async function sendMessage(req: Request, res: Response) {
             const io: SocketServer<ClientToServerEvents, ServerToClientEvents> = req.app.get("io");
 
             if (io) {
-                io.to(existingRoom.id).emit("newMessage", newMessage, existingRoom.id);
-                existingRoom.members.forEach((member) => {
-                    io.to(`user_${member.userId}`).emit("newMessage", newMessage, existingRoom.id);
+                io.to(room.id).emit("newMessage", newMessage, room.id);
+                room.members.forEach((member) => {
+                    io.to(`user_${member.userId}`).emit("newMessage", newMessage, room.id);
                 });
             }
 
-            return { roomId: existingRoom.id, message: newMessage };
+            return { roomId: room.id, message: newMessage };
         });
 
         return result;
